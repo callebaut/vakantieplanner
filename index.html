@@ -135,6 +135,13 @@
     flex:none; max-width:44%; border:1px solid var(--line); border-radius:6px;
     padding:4px 5px; font-size:12px; font-family:'Inter'; background:white; color:var(--ink);
   }
+  /* ster: ★ = op alle vakanties (algemeen), ☆ = alleen deze vakantie */
+  .star{
+    border:none; background:none; cursor:pointer; font-size:14px; line-height:1;
+    padding:2px 3px; color:#cfc8ba; flex:none; font-family:'Inter';
+  }
+  .star.on{color:#d9a520;}
+  @media (hover:hover){ .star:hover{color:var(--ink);} }
   .panel-item .del{margin-left:auto; cursor:pointer; color:#c0392b; font-size:12px; border:none; background:none; padding:4px 6px;}
   /* Hover-effecten enkel op apparaten met een muis; op touch veroorzaken
      :hover-regels het iOS "dubbele tik"-gedrag en blijft de wisknop zichtbaar. */
@@ -994,10 +1001,11 @@ function checklistItemHtml(kind, it){
     const title = kind==='packing' ? 'Klik om te hernoemen of te verplaatsen' : 'Klik om te hernoemen';
     textEl = `<span class="pi-text" title="${title}" onclick="startRename('${kind}','${it.id}',${it.general})">${escapeHtml(it.text)}</span>`;
   }
+  const starBtn = editing ? '' : `<button class="star${it.general?' on':''}" title="${it.general?'Algemeen — op alle vakanties. Klik om enkel op deze vakantie te zetten.':'Alleen deze vakantie. Klik om op al je vakanties te zetten.'}" onclick="toggleGeneral('${kind}','${it.id}',${it.general})">${it.general?'★':'☆'}</button>`;
   return `<li class="panel-item${it.done?' done':''}">
     <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}',${it.general})">
     ${textEl}
-    ${it.general ? '<span class="tag-general" title="Staat op elke vakantie">algemeen</span>' : ''}
+    ${starBtn}
     ${delBtn}
   </li>`;
 }
@@ -1160,6 +1168,51 @@ function restoreTemplateItem(kind, id){
   delete trip.templateState[kind].skip[id];
   persist();
   renderChecklist(kind);
+}
+
+// Wisselen tussen "algemeen" (op alle vakanties) en "alleen deze vakantie".
+function toggleGeneral(kind, id, general){
+  if(general) demoteToTrip(kind, id);
+  else promoteToGeneral(kind, id);
+}
+function promoteToGeneral(kind, id){
+  const trip = getTrip();
+  const idx = trip[kind].findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const [item] = trip[kind].splice(idx, 1);
+  const g = {id:item.id, text:item.text};
+  if(kind==='packing') g.cat = item.cat || 'overig';
+  state.template[kind].push(g);
+  // Afvinkstatus voor deze vakantie behouden; andere vakanties krijgen het onafgevinkt.
+  trip.templateState[kind].done[item.id] = !!item.done;
+  if(kind==='packing') collapsedCats[g.cat || 'overig'] = false;
+  persist();
+  renderChecklist(kind);
+  flashSaved('Op alle vakanties ✓');
+}
+function demoteToTrip(kind, id){
+  const tmpl = state.template[kind] || [];
+  const idx = tmpl.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const [item] = tmpl.splice(idx, 1);
+  // Losmaken zonder dataverlies: elke vakantie die het toonde, houdt een
+  // eigen kopie (met zijn eigen afvinkstatus); weggelaten blijft weggelaten.
+  state.trips.forEach(t=>{
+    const ts = t.templateState[kind];
+    const wasSkipped = !!ts.skip[id];
+    const wasDone = !!ts.done[id];
+    delete ts.done[id];
+    delete ts.skip[id];
+    if(!wasSkipped){
+      const ex = {id:uid(), text:item.text, done:wasDone};
+      if(kind==='packing') ex.cat = item.cat || 'overig';
+      t[kind].push(ex);
+    }
+  });
+  if(kind==='packing') collapsedCats[item.cat || 'overig'] = false;
+  persist();
+  renderChecklist(kind);
+  flashSaved('Alleen deze vakantie ✓');
 }
 function addChecklistItem(kind){
   const trip = getTrip();
