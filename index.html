@@ -163,6 +163,28 @@
 
   .save-note{position:fixed; bottom:14px; right:18px; font-size:11px; color:#a89f92; opacity:0; transition:opacity .3s;}
   .save-note.show{opacity:1;}
+
+  /* access gate */
+  .gate-backdrop{
+    position:fixed; inset:0; background:var(--paper); display:none;
+    align-items:center; justify-content:center; z-index:100;
+  }
+  .gate-backdrop.open{display:flex;}
+  .gate{
+    background:white; border:1px solid var(--line); border-radius:14px; padding:28px;
+    width:min(360px,90vw); display:flex; flex-direction:column; gap:12px; text-align:center;
+  }
+  .gate h2{margin:0; font-size:20px;}
+  .gate p{margin:0; font-size:13px; color:#6b6459;}
+  .gate input{
+    border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+    font-size:14px; font-family:'Inter'; text-align:center;
+  }
+  .gate-error{color:#b0473f; font-size:12px; min-height:14px;}
+  .gate button{
+    border:none; background:var(--gr-accent); color:white; border-radius:8px;
+    padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -266,6 +288,16 @@
   </div>
 </div>
 
+<div class="gate-backdrop" id="gateBackdrop">
+  <div class="gate">
+    <h2 class="display">Vakantieplanner</h2>
+    <p>Voer de toegangscode in om de planner te openen.</p>
+    <input type="password" id="gateInput" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')submitGate()">
+    <div class="gate-error" id="gateError"></div>
+    <button onclick="submitGate()">Openen</button>
+  </div>
+</div>
+
 <div class="save-note" id="saveNote">Opgeslagen ✓</div>
 
 <script>
@@ -317,27 +349,78 @@ function nextMonday(offsetDays=0){
 }
 
 const STORAGE_KEY = 'vakantie-planner-state';
+const ACCESS_KEY_STORAGE = 'vakantie-planner-access-key';
 
-async function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      state = JSON.parse(raw);
-      return;
-    }
-  }catch(e){ console.error('Kon opgeslagen data niet lezen', e); }
-  state = defaultState();
-  persist();
+// De anon key is bedoeld om publiek te zijn; echte toegang wordt server-side
+// afgedwongen door de toegangscode-check in planner_load/planner_save
+// (zie supabase-setup.sql). Zolang de placeholders niet ingevuld zijn,
+// werkt de app puur lokaal (localStorage) en is er geen toegangsscherm.
+const SUPABASE_URL = '__SUPABASE_URL__';
+const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__';
+const REMOTE_ENABLED = !SUPABASE_URL.startsWith('__');
+
+async function rpc(fn, args){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SUPABASE_ANON_KEY,
+      'Authorization':`Bearer ${SUPABASE_ANON_KEY}`
+    },
+    body:JSON.stringify(args)
+  });
+  const text = await res.text();
+  if(!res.ok) throw new Error(text || res.statusText);
+  return text ? JSON.parse(text) : null;
 }
 
-async function persist(){
+function readLocalCache(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    flashSaved();
-  }catch(e){
-    console.error('Opslaan mislukt', e);
-    alert('Opslaan is mislukt. Maak een back-up via "Exporteer back-up" zodat je niets verliest.');
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.error('Kon lokale data niet lezen', e); }
+  return null;
+}
+
+function writeLocalCache(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('Lokaal opslaan mislukt', e); }
+}
+
+async function loadState(){
+  if(!REMOTE_ENABLED){
+    state = readLocalCache() || defaultState();
+    return;
   }
+  const key = localStorage.getItem(ACCESS_KEY_STORAGE);
+  const remote = await rpc('planner_load', {access_key:key});
+  if(remote){
+    state = remote;
+    writeLocalCache();
+  } else {
+    // Database is nog leeg: neem wat er lokaal staat mee als startpunt.
+    state = readLocalCache() || defaultState();
+    await rpc('planner_save', {access_key:key, payload:state});
+  }
+}
+
+let saveTimer = null;
+async function persist(){
+  writeLocalCache();
+  if(!REMOTE_ENABLED){ flashSaved(); return; }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await rpc('planner_save', {access_key:localStorage.getItem(ACCESS_KEY_STORAGE), payload:state});
+      flashSaved();
+    }catch(e){
+      console.error('Opslaan naar server mislukt', e);
+      if(String(e.message).includes('invalid key')){
+        localStorage.removeItem(ACCESS_KEY_STORAGE);
+        openGate('Toegangscode is niet meer geldig.');
+      }
+    }
+  }, 600);
 }
 
 function exportBackup(){
@@ -692,9 +775,48 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+function openGate(msg){
+  document.getElementById('gateError').textContent = msg || '';
+  document.getElementById('gateBackdrop').classList.add('open');
+  document.getElementById('gateInput').focus();
+}
+function closeGate(){
+  document.getElementById('gateBackdrop').classList.remove('open');
+}
+
+async function submitGate(){
+  const key = document.getElementById('gateInput').value.trim();
+  if(!key) return;
+  localStorage.setItem(ACCESS_KEY_STORAGE, key);
+  document.getElementById('gateError').textContent = '';
+  try{
+    await loadState();
+    document.getElementById('gateInput').value = '';
+    closeGate();
+    renderAll();
+  }catch(e){
+    console.error(e);
+    localStorage.removeItem(ACCESS_KEY_STORAGE);
+    document.getElementById('gateError').textContent =
+      String(e.message).includes('invalid key') ? 'Ongeldige toegangscode.' : 'Kon geen verbinding maken. Probeer opnieuw.';
+  }
+}
+
 (async function init(){
-  await loadState();
-  renderAll();
+  if(REMOTE_ENABLED && !localStorage.getItem(ACCESS_KEY_STORAGE)){
+    openGate();
+    return;
+  }
+  try{
+    await loadState();
+    renderAll();
+  }catch(e){
+    console.error(e);
+    if(REMOTE_ENABLED){
+      localStorage.removeItem(ACCESS_KEY_STORAGE);
+      openGate(String(e.message).includes('invalid key') ? 'Ongeldige toegangscode.' : 'Kon geen verbinding maken. Probeer opnieuw.');
+    }
+  }
 })();
 </script>
 </body>
