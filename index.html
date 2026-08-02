@@ -145,6 +145,10 @@
   .card-top{display:flex; gap:6px; align-items:flex-start;}
   .card-title{flex:1; line-height:1.3;}
   .pin{font-size:12px;}
+  .card-notes{
+    font-size:11.5px; color:#8a8175; margin-top:5px; white-space:pre-line;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
   .card-loc{display:flex; gap:12px; margin-top:5px; font-size:11px;}
   .card-loc a{color:var(--accent-color, var(--gr-accent)); text-decoration:none; font-weight:600;}
   @media (hover:hover){
@@ -170,9 +174,10 @@
   }
   .modal h3{margin:0; font-size:16px;}
   .modal label{font-size:12px; font-weight:600; color:#6b6459; display:block; margin-bottom:4px;}
-  .modal input[type=text], .modal input[type=date], .modal select{
+  .modal input[type=text], .modal input[type=date], .modal select, .modal textarea{
     width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:'Inter';
   }
+  .modal textarea{resize:vertical; min-height:70px;}
   .modal .row{display:flex; gap:10px;}
   .modal .row > div{flex:1;}
   .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:6px;}
@@ -289,6 +294,10 @@
     <div>
       <label>Locatie of link (optioneel)</label>
       <input type="text" id="itemLocationInput" placeholder="bv. Oude haven Chania, of een www-link">
+    </div>
+    <div>
+      <label>Notities (optioneel)</label>
+      <textarea id="itemNotesInput" rows="3" placeholder="bv. tickets op voorhand boeken, om 9u vertrekken…"></textarea>
     </div>
     <div class="check-row">
       <input type="checkbox" id="itemLockedInput">
@@ -796,20 +805,26 @@ function makeCard(it){
   card.className = 'card' + (it.locked?' locked':'') + (it.done?' done':'');
   card.draggable = !it.locked;
   card.ondragstart = (e)=>{ e.dataTransfer.setData('text/plain', it.id); };
+  const notes = (it.notes||'').trim();
   card.innerHTML = `
     <div class="card-top">
       <span>${it.category||'📌'}</span>
       <span class="card-title">${escapeHtml(it.title)}</span>
       ${it.locked?'<span class="pin" title="Vastgezet op deze datum">📌</span>':''}
     </div>
+    ${notes?`<div class="card-notes">${escapeHtml(notes)}</div>`:''}
     ${locationLinksHtml(it)}
     <div class="card-controls">
       <button onclick="toggleItemDone('${it.id}')">${it.done?'↺ heropen':'✓ gedaan'}</button>
       <button onclick="toggleLock('${it.id}')">${it.locked?'🔓 losmaken':'🔒 vastzetten'}</button>
-      <button onclick="editItem('${it.id}')">✎</button>
       <button onclick="deleteItem('${it.id}')">✕</button>
     </div>
   `;
+  // Klik op het kaartje zelf opent het detail; knoppen en links gaan voor.
+  card.onclick = (e)=>{
+    if(e.target.closest('button, a')) return;
+    editItem(it.id);
+  };
   return card;
 }
 
@@ -854,6 +869,7 @@ function openItemModal(existing){
   document.getElementById('itemTitleInput').value = existing ? existing.title : '';
   document.getElementById('itemCategoryInput').value = existing ? existing.category : '🎯';
   document.getElementById('itemLocationInput').value = existing ? (existing.location||'') : '';
+  document.getElementById('itemNotesInput').value = existing ? (existing.notes||'') : '';
   document.getElementById('itemLockedInput').checked = existing ? !!existing.locked : false;
 
   const daySelect = document.getElementById('itemDayInput');
@@ -881,13 +897,14 @@ function saveItem(){
   const dayVal = document.getElementById('itemDayInput').value;
   const day = dayVal==='none' ? null : parseInt(dayVal);
   const location = document.getElementById('itemLocationInput').value.trim();
+  const notes = document.getElementById('itemNotesInput').value.trim();
   const locked = document.getElementById('itemLockedInput').checked;
 
   if(editingItemId){
     const it = getTrip().items.find(x=>x.id===editingItemId);
-    Object.assign(it, {title, category, day, location, locked});
+    Object.assign(it, {title, category, day, location, notes, locked});
   } else {
-    getTrip().items.push({id:uid(), title, category, day, location, locked, done:false});
+    getTrip().items.push({id:uid(), title, category, day, location, notes, locked, done:false});
   }
   persist();
   closeItemModal();
