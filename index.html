@@ -131,6 +131,10 @@
     flex:none; max-width:46%; border:1px solid var(--line); border-radius:6px;
     padding:3px 4px; font-size:12px; font-family:'Inter'; background:white;
   }
+  .tmpl-cat{
+    flex:none; max-width:44%; border:1px solid var(--line); border-radius:6px;
+    padding:4px 5px; font-size:12px; font-family:'Inter'; background:white; color:var(--ink);
+  }
   .panel-item .del{margin-left:auto; cursor:pointer; color:#c0392b; font-size:12px; border:none; background:none; padding:4px 6px;}
   /* Hover-effecten enkel op apparaten met een muis; op touch veroorzaken
      :hover-regels het iOS "dubbele tik"-gedrag en blijft de wisknop zichtbaar. */
@@ -451,7 +455,7 @@
 <div class="modal-backdrop" id="tmplModalBackdrop">
   <div class="modal">
     <h3 id="tmplModalTitle">Algemene lijst</h3>
-    <p style="font-size:13px; color:#6b6459; margin:0;">Deze items staan standaard op elke vakantie. Verwijder je hier iets, dan verdwijnt het overal. Per vakantie kan je items apart weglaten of extra items toevoegen.</p>
+    <p style="font-size:13px; color:#6b6459; margin:0;">Enkel de <strong>algemene</strong> items (met het label "algemeen") staan hier — niet de items die je aan één vakantie toevoegde. Pas de categorie aan, hernoem (tik op de tekst) of verwijder (verdwijnt overal). Per vakantie kan je items apart weglaten.</p>
     <ul class="panel-list" id="tmplList" style="max-height:48vh; overflow:auto;"></ul>
     <div class="mini-add">
       <input type="text" id="tmplInput" placeholder="Algemeen item toevoegen…" onkeydown="if(event.key==='Enter')addTemplateItem()">
@@ -1515,35 +1519,55 @@ function closeTemplateModal(){
   editingTemplateId = null;
   renderAll();
 }
+function templateItemHtml(it, withCat){
+  const textEl = editingTemplateId===it.id
+    ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
+         onkeydown="onTemplateRenameKey(event,'${it.id}')"
+         onblur="commitTemplateRename('${it.id}',this.value)">`
+    : `<span class="pi-text" style="flex:1;" title="Klik om te hernoemen" onclick="startTemplateRename('${it.id}')">${escapeHtml(it.text)}</span>`;
+  const catSel = withCat
+    ? `<select class="tmpl-cat" title="Categorie" onchange="setTemplateCat('${it.id}',this.value)">${catOptionsHtml(it.cat)}</select>`
+    : '';
+  return `<li class="panel-item">
+    ${textEl}
+    ${catSel}
+    <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeTemplateItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
+  </li>`;
+}
 function renderTemplateList(){
   const ul = document.getElementById('tmplList');
-  ul.innerHTML = '';
   const arr = (state.template && state.template[tmplKind]) || [];
   if(!arr.length){
-    const li = document.createElement('li');
-    li.className = 'empty-hint';
-    li.textContent = 'Nog geen algemene items — voeg er hieronder toe.';
-    ul.appendChild(li);
+    ul.innerHTML = '<li class="empty-hint">Nog geen algemene items — voeg er hieronder toe.</li>';
     return;
   }
-  arr.forEach(it=>{
-    const li = document.createElement('li');
-    li.className = 'panel-item';
-    const textEl = editingTemplateId===it.id
-      ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
-           onkeydown="onTemplateRenameKey(event,'${it.id}')"
-           onblur="commitTemplateRename('${it.id}',this.value)">`
-      : `<span class="pi-text" style="flex:1;" title="Klik om te hernoemen" onclick="startTemplateRename('${it.id}')">${escapeHtml(it.text)}</span>`;
-    li.innerHTML = `
-      ${textEl}
-      <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeTemplateItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
-    `;
-    ul.appendChild(li);
-  });
+  if(tmplKind !== 'packing'){
+    // Voorbereiding: platte lijst (geen categorieën).
+    ul.innerHTML = arr.map(it => templateItemHtml(it, false)).join('');
+  } else {
+    // Inpaklijst: gegroepeerd per categorie, met categorie-keuze per item.
+    const byCat = {};
+    arr.forEach(it=>{ const c = it.cat || 'overig'; (byCat[c] = byCat[c] || []).push(it); });
+    let html = '';
+    PACKING_CATS.forEach(cat=>{
+      const list = byCat[cat.key];
+      if(!list || !list.length) return;
+      html += `<li class="cat-header" style="cursor:default">
+        <span class="cat-name">${escapeHtml(cat.label)}</span>
+        <span class="cat-count">${list.length}</span>
+      </li>`;
+      list.forEach(it=>{ html += templateItemHtml(it, true); });
+    });
+    ul.innerHTML = html;
+  }
   if(editingTemplateId){
     const inp = ul.querySelector('.pi-edit');
     if(inp){ inp.focus(); inp.select(); }
   }
+}
+function setTemplateCat(id, cat){
+  const it = (state.template[tmplKind]||[]).find(x=>x.id===id);
+  if(it && it.cat!==cat){ it.cat = cat; persist(); renderTemplateList(); }
 }
 function startTemplateRename(id){
   editingTemplateId = id;
