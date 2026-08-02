@@ -539,8 +539,14 @@ let deleteArmed = false;
 // "lees meer"-knop, zodat je vlot naar de dagindeling kan scrollen.
 const CHECKLIST_COLLAPSE_LIMIT = 5;
 let expandedLists = {packing:false, prep:false};
-// Ingeklapte categorie-secties van de inpaklijst (per categorie-key).
-let collapsedCats = {};
+// Ingeklapte categorie-secties van de inpaklijst: per vakantie bewaard en
+// meegesynct, zodat de status blijft na herladen/bookmarken.
+function catCollapsed(){
+  const t = getTrip();
+  if(!t) return {};
+  if(!t.catCollapsed) t.catCollapsed = {};
+  return t.catCollapsed;
+}
 // Welk item wordt momenteel hernoemd (inline invoerveld).
 let editingChecklist = null;   // {kind, id, general}
 let editingTemplateId = null;  // id in de algemene-lijst-modal
@@ -919,7 +925,6 @@ if('serviceWorker' in navigator){
 function switchTrip(id){
   currentTripId = id;
   expandedLists = {packing:false, prep:false};
-  collapsedCats = {};
   renderAll();
 }
 
@@ -1099,7 +1104,7 @@ function renderGroupedChecklist(){
     const list = byCat[cat.key];
     if(!list || !list.length) return;
     const done = list.filter(x=>x.done).length;
-    const isCollapsed = !!collapsedCats[cat.key];
+    const isCollapsed = !!catCollapsed()[cat.key];
     html += `<li class="cat-header${isCollapsed?' collapsed':''}" onclick="toggleCat('${cat.key}')">
       <span class="cat-caret">${isCollapsed?'▸':'▾'}</span>
       <span class="cat-name">${escapeHtml(cat.label)}</span>
@@ -1113,7 +1118,9 @@ function renderGroupedChecklist(){
   applyPanelCollapse(kind);
 }
 function toggleCat(key){
-  collapsedCats[key] = !collapsedCats[key];
+  const m = catCollapsed();
+  m[key] = !m[key];
+  persist();
   renderChecklist('packing');
 }
 
@@ -1177,7 +1184,7 @@ function commitRename(kind, id, general){
     if(cat != null && target.cat !== cat){ target.cat = cat; changed = true; }
     if(changed) persist();
   }
-  if(cat != null) collapsedCats[cat] = false; // categorie zichtbaar houden
+  if(cat != null) catCollapsed()[cat] = false; // categorie zichtbaar houden
   renderChecklist(kind);
 }
 
@@ -1229,7 +1236,7 @@ function promoteToGeneral(kind, id){
   state.template[kind].push(g);
   // Afvinkstatus voor deze vakantie behouden; andere vakanties krijgen het onafgevinkt.
   trip.templateState[kind].done[item.id] = !!item.done;
-  if(kind==='packing') collapsedCats[g.cat || 'overig'] = false;
+  if(kind==='packing') catCollapsed()[g.cat || 'overig'] = false;
   persist();
   renderChecklist(kind);
   flashSaved('Op alle vakanties ✓');
@@ -1253,7 +1260,7 @@ function demoteToTrip(kind, id){
       t[kind].push(ex);
     }
   });
-  if(kind==='packing') collapsedCats[item.cat || 'overig'] = false;
+  if(kind==='packing') catCollapsed()[item.cat || 'overig'] = false;
   persist();
   renderChecklist(kind);
   flashSaved('Alleen deze vakantie ✓');
@@ -1281,7 +1288,7 @@ function addChecklistItem(kind){
   }
   inp.value='';
   expandedLists[kind] = true;
-  if(cat!=null) collapsedCats[cat] = false;
+  if(cat!=null) catCollapsed()[cat] = false;
   persist();
   renderChecklist(kind);
 }
