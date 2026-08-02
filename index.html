@@ -109,6 +109,28 @@
   @media (hover:hover){ .lo-chip:hover{border-color:#b0a89b; color:var(--ink);} }
   .add-scope{display:flex; align-items:center; gap:6px; margin-top:8px; font-size:11.5px; color:#8a8175; cursor:pointer;}
   .add-scope input{width:14px; height:14px; flex:none; accent-color:var(--accent-color, var(--gr-accent));}
+  .add-opts{display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap;}
+  .add-opts .add-scope{margin-top:0;}
+  .add-opts select{
+    border:1px solid var(--line); border-radius:7px; padding:6px 8px; font-size:12px;
+    font-family:'Inter'; background:white; color:var(--ink); max-width:100%;
+  }
+  /* categorie-kopjes in de inpaklijst */
+  .cat-header{
+    display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+    padding:9px 6px 4px; margin-top:4px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:#6b6459;
+  }
+  .cat-header:first-child{border-top:none; margin-top:0;}
+  .cat-header .cat-caret{width:12px; font-size:10px; color:#a89f92; flex:none;}
+  .cat-header .cat-name{flex:1; min-width:0;}
+  .cat-header .cat-count{font-size:11px; font-weight:600; color:#a89f92; flex:none;}
+  .cat-header.collapsed{color:#9a9284;}
+  @media (hover:hover){ .cat-header:hover{color:var(--ink);} }
+  .pi-cat-edit{
+    flex:none; max-width:46%; border:1px solid var(--line); border-radius:6px;
+    padding:3px 4px; font-size:12px; font-family:'Inter'; background:white;
+  }
   .panel-item .del{margin-left:auto; cursor:pointer; color:#c0392b; font-size:12px; border:none; background:none; padding:4px 6px;}
   /* Hover-effecten enkel op apparaten met een muis; op touch veroorzaken
      :hover-regels het iOS "dubbele tik"-gedrag en blijft de wisknop zichtbaar. */
@@ -293,7 +315,21 @@
         <input type="text" id="packingInput" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('packing')">
         <button onclick="addChecklistItem('packing')">+</button>
       </div>
-      <label class="add-scope"><input type="checkbox" id="packingGeneral"> Ook op al mijn vakanties (algemeen)</label>
+      <div class="add-opts">
+        <select id="packingCat" title="Categorie voor nieuwe items">
+          <option value="auto">✨ Automatisch</option>
+          <option value="baby">🍼 Lorre &amp; Loes</option>
+          <option value="tech">🔌 Elektronica &amp; kabels</option>
+          <option value="toilet">🧴 Toilet &amp; gezondheid</option>
+          <option value="kleding">👕 Kleding</option>
+          <option value="slaap">🛏️ Slaap &amp; handdoeken</option>
+          <option value="eten">🍽️ Eten &amp; keuken</option>
+          <option value="ontspanning">🎒 Ontspanning</option>
+          <option value="documenten">🔑 Documenten &amp; sleutels</option>
+          <option value="overig">📦 Overig</option>
+        </select>
+        <label class="add-scope"><input type="checkbox" id="packingGeneral"> Algemeen</label>
+      </div>
     </section>
 
     <section class="panel" id="prepPanel">
@@ -479,6 +515,8 @@ let deleteArmed = false;
 // "lees meer"-knop, zodat je vlot naar de dagindeling kan scrollen.
 const CHECKLIST_COLLAPSE_LIMIT = 5;
 let expandedLists = {packing:false, prep:false};
+// Ingeklapte categorie-secties van de inpaklijst (per categorie-key).
+let collapsedCats = {};
 // Welk item wordt momenteel hernoemd (inline invoerveld).
 let editingChecklist = null;   // {kind, id, general}
 let editingTemplateId = null;  // id in de algemene-lijst-modal
@@ -515,6 +553,42 @@ function ensureCurrentTrip(){
 
 function emptyTemplateState(){
   return {packing:{done:{}, skip:{}}, prep:{done:{}, skip:{}}};
+}
+
+// Categorieën voor de inpaklijst (vaste set + "Overig" als vangnet).
+const PACKING_CATS = [
+  {key:'baby',        label:'🍼 Lorre & Loes'},
+  {key:'tech',        label:'🔌 Elektronica & kabels'},
+  {key:'toilet',      label:'🧴 Toilet & gezondheid'},
+  {key:'kleding',     label:'👕 Kleding'},
+  {key:'slaap',       label:'🛏️ Slaap & handdoeken'},
+  {key:'eten',        label:'🍽️ Eten & keuken'},
+  {key:'ontspanning', label:'🎒 Ontspanning'},
+  {key:'documenten',  label:'🔑 Documenten & sleutels'},
+  {key:'overig',      label:'📦 Overig'}
+];
+const CAT_LABEL = Object.fromEntries(PACKING_CATS.map(c=>[c.key, c.label]));
+
+// Trefwoorden per categorie; eerste match wint (volgorde = prioriteit).
+// Bewust GEEN trefwoorden voor taken als "frigo/inchecken/alarm" zodat die
+// in "Overig" belanden en opvallen (ze horen eigenlijk bij Voorbereiding).
+const CAT_KEYWORDS = [
+  ['baby', ['loes','loesje','lorre','baby','pamper','luier','flesje','melkpoeder','melk','bavet','speen','tutter','verzorgingskussen','groentenpap','bedje','stoeletje','zwemband','beertje','paddington','fietske','doekjes','drinkbeker','slab','papfles']],
+  ['documenten', ['paspoort','identiteit','sleutel','ticket','boarding','visa','portefeuille','bankkaart','reispas','verzekering','papieren','document']],
+  ['tech', ['laptop','ipad','tablet','lader','oplader','powerbank','gsm','kabel','hdmi','verleng','adapter','modem','sim','batterij','koptelefoon','oortje','usb','charger','houder']],
+  ['toilet', ['medicatie','ehbo','douche','tandenborstel','tandpasta','shampoo','zeep','mugzalf','muggen','zonnebrand','zonnecreme','naprep','watjes','oren','pleister','scheer','borstel']],
+  ['kleding', ['kleding','pyjama','ondergoed','sok','schoen','pantoffel','laars','jas','zwemkleren','broek','trui','shirt','pet','muts','sjaal','handschoen','kleren','zonnebril']],
+  ['slaap', ['beddengoed','bedden','laken','kussen','handdoek','deken','slaapzak']],
+  ['eten', ['eten','keuken','kruiden','wijn','water','mes','vuilzak','koffie','thee','snack','bord','beker','picknick','proviand']],
+  ['ontspanning', ['boek','spel','speelgoed','muziek','kaarten','tijdschrift','magazine']]
+];
+function stripDiacritics(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function guessCategory(text){
+  const t = stripDiacritics((text||'').toLowerCase());
+  for(const [cat, words] of CAT_KEYWORDS){
+    if(words.some(w => t.includes(w))) return cat;
+  }
+  return 'overig';
 }
 
 function defaultState(){
@@ -625,6 +699,13 @@ function migrateTemplate(s){
     }
     s._templateSeeded = true;
   }
+
+  // Eénmalig: bestaande inpak-items automatisch een categorie geven.
+  if(!s._catSeeded){
+    (s.template.packing||[]).forEach(it=>{ if(it.cat==null) it.cat = guessCategory(it.text); });
+    s.trips.forEach(t=>{ (t.packing||[]).forEach(it=>{ if(it.cat==null) it.cat = guessCategory(it.text); }); });
+    s._catSeeded = true;
+  }
   return s;
 }
 
@@ -635,8 +716,8 @@ function effectiveList(trip, kind){
   const ts = (trip.templateState && trip.templateState[kind]) || {done:{}, skip:{}};
   const general = tmpl
     .filter(ti => !ts.skip[ti.id])
-    .map(ti => ({id:ti.id, text:ti.text, done:!!ts.done[ti.id], general:true}));
-  const extras = trip[kind].map(it => ({id:it.id, text:it.text, done:!!it.done, general:false}));
+    .map(ti => ({id:ti.id, text:ti.text, done:!!ts.done[ti.id], general:true, cat:ti.cat||'overig'}));
+  const extras = trip[kind].map(it => ({id:it.id, text:it.text, done:!!it.done, general:false, cat:it.cat||'overig'}));
   return {general, extras};
 }
 
@@ -687,7 +768,7 @@ function writeLocalCache(){
 
 async function loadState(){
   if(!REMOTE_ENABLED){
-    state = migrateState(readLocalCache()) || defaultState();
+    state = migrateState(readLocalCache()) || migrateTemplate(defaultState());
     ensureCurrentTrip();
     writeLocalCache();
     return;
@@ -713,15 +794,16 @@ async function loadState(){
       state = migrateState(readLocalCache()) || migrateState(remote);
       await pushLocal(key);
     } else {
-      // Push terug bij een schema-migratie (oude vorm of nog geen algemene lijst).
-      const needsMigration = !remote.trips || !remote.template;
+      // Push terug bij een schema-migratie (oude vorm, nog geen algemene
+      // lijst, of nog geen automatische categorieën).
+      const needsMigration = !remote.trips || !remote.template || !remote._catSeeded;
       state = migrateState(remote);
       writeLocalCache();
       if(needsMigration) await pushLocal(key);
     }
   } else {
     // Database is nog leeg: neem wat er lokaal staat mee als startpunt.
-    state = migrateState(readLocalCache()) || defaultState();
+    state = migrateState(readLocalCache()) || migrateTemplate(defaultState());
     await pushLocal(key);
   }
   ensureCurrentTrip();
@@ -813,6 +895,7 @@ if('serviceWorker' in navigator){
 function switchTrip(id){
   currentTripId = id;
   expandedLists = {packing:false, prep:false};
+  collapsedCats = {};
   renderAll();
 }
 
@@ -884,40 +967,80 @@ function renderAll(){
 function checklistUlId(kind){ return kind==='packing' ? 'packingList' : 'prepList'; }
 
 function renderChecklist(kind){
+  if(kind === 'packing') renderGroupedChecklist();
+  else renderFlatChecklist(kind);
+}
+
+// HTML voor één checklist-item (gedeeld door gegroepeerde en platte weergave).
+function checklistItemHtml(kind, it){
+  const editing = editingChecklist && editingChecklist.kind===kind
+    && editingChecklist.id===it.id && editingChecklist.general===it.general;
+  const delBtn = it.general
+    ? `<button class="del" title="Weglaten voor deze vakantie" onclick="removeChecklist('${kind}','${it.id}',true)">✕</button>`
+    : `<button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}',false)">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>`;
+  let textEl;
+  if(editing){
+    const catSel = kind==='packing'
+      ? `<select class="pi-cat-edit" onchange="commitRename('${kind}','${it.id}',${it.general})" onblur="onEditBlur('${kind}','${it.id}',${it.general})">${catOptionsHtml(it.cat)}</select>`
+      : '';
+    textEl = `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
+        onkeydown="onRenameKey(event,'${kind}','${it.id}',${it.general})"
+        onblur="onEditBlur('${kind}','${it.id}',${it.general})">${catSel}`;
+  } else {
+    const title = kind==='packing' ? 'Klik om te hernoemen of te verplaatsen' : 'Klik om te hernoemen';
+    textEl = `<span class="pi-text" title="${title}" onclick="startRename('${kind}','${it.id}',${it.general})">${escapeHtml(it.text)}</span>`;
+  }
+  return `<li class="panel-item${it.done?' done':''}">
+    <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}',${it.general})">
+    ${textEl}
+    ${it.general ? '<span class="tag-general" title="Staat op elke vakantie">algemeen</span>' : ''}
+    ${delBtn}
+  </li>`;
+}
+function catOptionsHtml(selected){
+  const sel = selected || 'overig';
+  return PACKING_CATS.map(c => `<option value="${c.key}" ${c.key===sel?'selected':''}>${escapeHtml(c.label)}</option>`).join('');
+}
+
+// Weggelaten algemene items als chips om terug toe te voegen.
+function renderLeftOut(kind){
+  const area = document.getElementById(kind==='packing' ? 'packingLeftOut' : 'prepLeftOut');
+  area.innerHTML = '';
+  const trip = getTrip();
+  const ts = trip.templateState[kind];
+  const skipped = ((state.template && state.template[kind]) || []).filter(ti => ts.skip[ti.id]);
+  if(!skipped.length) return;
+  const lbl = document.createElement('span');
+  lbl.textContent = 'Weggelaten:';
+  area.appendChild(lbl);
+  skipped.forEach(ti=>{
+    const chip = document.createElement('button');
+    chip.className = 'lo-chip';
+    chip.textContent = '+ ' + ti.text;
+    chip.title = 'Terug toevoegen aan deze vakantie';
+    chip.onclick = ()=>restoreTemplateItem(kind, ti.id);
+    area.appendChild(chip);
+  });
+}
+function focusEdit(kind, ul){
+  if(editingChecklist && editingChecklist.kind===kind){
+    const inp = ul.querySelector('.pi-edit');
+    if(inp){ inp.focus(); inp.select(); }
+  }
+}
+
+// Platte weergave (voorbereiding): met "lees meer"-inklappen.
+function renderFlatChecklist(kind){
   const trip = getTrip();
   const ul = document.getElementById(checklistUlId(kind));
-  const area = document.getElementById(kind==='packing' ? 'packingLeftOut' : 'prepLeftOut');
   ul.innerHTML = '';
-  area.innerHTML = '';
+  document.getElementById(kind==='packing' ? 'packingLeftOut' : 'prepLeftOut').innerHTML = '';
   if(!trip) return;
-
   const {general, extras} = effectiveList(trip, kind);
   const items = general.concat(extras);
   const collapsed = !expandedLists[kind] && items.length > CHECKLIST_COLLAPSE_LIMIT;
   const visible = collapsed ? items.slice(0, CHECKLIST_COLLAPSE_LIMIT) : items;
-
-  visible.forEach(it=>{
-    const li = document.createElement('li');
-    li.className = 'panel-item' + (it.done?' done':'');
-    const editing = editingChecklist && editingChecklist.kind===kind
-      && editingChecklist.id===it.id && editingChecklist.general===it.general;
-    const delBtn = it.general
-      ? `<button class="del" title="Weglaten voor deze vakantie" onclick="removeChecklist('${kind}','${it.id}',true)">✕</button>`
-      : `<button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}',false)">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>`;
-    const textEl = editing
-      ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
-           onkeydown="onRenameKey(event,'${kind}','${it.id}',${it.general})"
-           onblur="commitRename('${kind}','${it.id}',${it.general},this.value)">`
-      : `<span class="pi-text" title="Klik om te hernoemen" onclick="startRename('${kind}','${it.id}',${it.general})">${escapeHtml(it.text)}</span>`;
-    li.innerHTML = `
-      <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}',${it.general})">
-      ${textEl}
-      ${it.general ? '<span class="tag-general" title="Staat op elke vakantie">algemeen</span>' : ''}
-      ${delBtn}
-    `;
-    ul.appendChild(li);
-  });
-
+  ul.innerHTML = visible.map(it => checklistItemHtml(kind, it)).join('');
   if(items.length > CHECKLIST_COLLAPSE_LIMIT){
     const li = document.createElement('li');
     li.className = 'list-more';
@@ -928,29 +1051,43 @@ function renderChecklist(kind){
     li.appendChild(btn);
     ul.appendChild(li);
   }
+  renderLeftOut(kind);
+  focusEdit(kind, ul);
+}
 
-  // Weggelaten algemene items: als chips om terug toe te voegen.
-  const ts = trip.templateState[kind];
-  const skipped = ((state.template && state.template[kind]) || []).filter(ti => ts.skip[ti.id]);
-  if(skipped.length){
-    const lbl = document.createElement('span');
-    lbl.textContent = 'Weggelaten:';
-    area.appendChild(lbl);
-    skipped.forEach(ti=>{
-      const chip = document.createElement('button');
-      chip.className = 'lo-chip';
-      chip.textContent = '+ ' + ti.text;
-      chip.title = 'Terug toevoegen aan deze vakantie';
-      chip.onclick = ()=>restoreTemplateItem(kind, ti.id);
-      area.appendChild(chip);
-    });
-  }
+// Gegroepeerde weergave (inpaklijst): inklapbare categorie-secties.
+function renderGroupedChecklist(){
+  const kind = 'packing';
+  const trip = getTrip();
+  const ul = document.getElementById('packingList');
+  ul.innerHTML = '';
+  document.getElementById('packingLeftOut').innerHTML = '';
+  if(!trip) return;
+  const {general, extras} = effectiveList(trip, kind);
+  const items = general.concat(extras);
+  const byCat = {};
+  items.forEach(it=>{ const c = it.cat || 'overig'; (byCat[c] = byCat[c] || []).push(it); });
 
-  // Focus het inline bewerk-veld zodra het getoond wordt.
-  if(editingChecklist && editingChecklist.kind===kind){
-    const inp = ul.querySelector('.pi-edit');
-    if(inp){ inp.focus(); inp.select(); }
-  }
+  let html = '';
+  PACKING_CATS.forEach(cat=>{
+    const list = byCat[cat.key];
+    if(!list || !list.length) return;
+    const done = list.filter(x=>x.done).length;
+    const isCollapsed = !!collapsedCats[cat.key];
+    html += `<li class="cat-header${isCollapsed?' collapsed':''}" onclick="toggleCat('${cat.key}')">
+      <span class="cat-caret">${isCollapsed?'▸':'▾'}</span>
+      <span class="cat-name">${escapeHtml(cat.label)}</span>
+      <span class="cat-count">${done}/${list.length}</span>
+    </li>`;
+    if(!isCollapsed) list.forEach(it=>{ html += checklistItemHtml(kind, it); });
+  });
+  ul.innerHTML = html || '<li class="empty-hint">Nog geen items — voeg er hieronder toe of importeer een lijst.</li>';
+  renderLeftOut(kind);
+  focusEdit(kind, ul);
+}
+function toggleCat(key){
+  collapsedCats[key] = !collapsedCats[key];
+  renderChecklist('packing');
 }
 
 function startRename(kind, id, general){
@@ -958,22 +1095,33 @@ function startRename(kind, id, general){
   renderChecklist(kind);
 }
 function onRenameKey(e, kind, id, general){
-  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  if(e.key==='Enter'){ e.preventDefault(); commitRename(kind, id, general); }
   else if(e.key==='Escape'){ editingChecklist = null; renderChecklist(kind); }
 }
-function commitRename(kind, id, general, value){
+// Blur bevestigt pas als de focus de bewerk-controls (tekst + categorie) verlaat.
+function onEditBlur(kind, id, general){
+  setTimeout(()=>{
+    const a = document.activeElement;
+    if(a && (a.classList.contains('pi-edit') || a.classList.contains('pi-cat-edit'))) return;
+    commitRename(kind, id, general);
+  }, 0);
+}
+function commitRename(kind, id, general){
   if(!editingChecklist) return; // al afgehandeld (bv. Escape)
+  const ul = document.getElementById(checklistUlId(kind));
+  const textInp = ul.querySelector('.pi-edit');
+  const catInp = ul.querySelector('.pi-cat-edit');
+  const text = textInp ? textInp.value.trim() : '';
+  const cat = catInp ? catInp.value : null;
   editingChecklist = null;
-  const text = (value||'').trim();
-  if(text){
-    if(general){
-      const ti = (state.template[kind]||[]).find(x=>x.id===id);
-      if(ti && ti.text!==text){ ti.text = text; persist(); }
-    } else {
-      const it = getTrip()[kind].find(x=>x.id===id);
-      if(it && it.text!==text){ it.text = text; persist(); }
-    }
+  const target = general ? (state.template[kind]||[]).find(x=>x.id===id) : getTrip()[kind].find(x=>x.id===id);
+  if(target && text){
+    let changed = false;
+    if(target.text !== text){ target.text = text; changed = true; }
+    if(cat != null && target.cat !== cat){ target.cat = cat; changed = true; }
+    if(changed) persist();
   }
+  if(cat != null) collapsedCats[cat] = false; // categorie zichtbaar houden
   renderChecklist(kind);
 }
 
@@ -1016,13 +1164,23 @@ function addChecklistItem(kind){
   const text = inp.value.trim();
   if(!text) return;
   const generalBox = document.getElementById(kind==='packing' ? 'packingGeneral' : 'prepGeneral');
+  let cat = null;
+  if(kind==='packing'){
+    const sel = document.getElementById('packingCat').value;
+    cat = sel==='auto' ? guessCategory(text) : sel;
+  }
   if(generalBox.checked){
-    state.template[kind].push({id:uid(), text});
+    const item = {id:uid(), text};
+    if(cat!=null) item.cat = cat;
+    state.template[kind].push(item);
   } else {
-    trip[kind].push({id:uid(), text, done:false});
+    const item = {id:uid(), text, done:false};
+    if(cat!=null) item.cat = cat;
+    trip[kind].push(item);
   }
   inp.value='';
   expandedLists[kind] = true;
+  if(cat!=null) collapsedCats[cat] = false;
   persist();
   renderChecklist(kind);
 }
@@ -1407,7 +1565,9 @@ function addTemplateItem(){
   const inp = document.getElementById('tmplInput');
   const text = inp.value.trim();
   if(!text || !tmplKind) return;
-  state.template[tmplKind].push({id:uid(), text});
+  const item = {id:uid(), text};
+  if(tmplKind==='packing') item.cat = guessCategory(text);
+  state.template[tmplKind].push(item);
   inp.value='';
   persist();
   renderTemplateList();
@@ -1481,12 +1641,18 @@ function confirmImport(){
   const scope = document.getElementById('importScope').value;
   const trip = getTrip();
   let added = 0;
+  // Inpak-items krijgen automatisch een categorie op basis van trefwoorden.
+  const mkItem = (t, done) => {
+    const it = done===undefined ? {id:uid(), text:t} : {id:uid(), text:t, done};
+    if(importKind==='packing') it.cat = guessCategory(t);
+    return it;
+  };
   if(scope === 'general'){
     const existing = new Set((state.template[importKind]||[]).map(x=>x.text.trim().toLowerCase()));
     items.forEach(t=>{
       if(existing.has(t.toLowerCase())) return;
       existing.add(t.toLowerCase());
-      state.template[importKind].push({id:uid(), text:t});
+      state.template[importKind].push(mkItem(t));
       added++;
     });
   } else {
@@ -1496,7 +1662,7 @@ function confirmImport(){
     items.forEach(t=>{
       if(existing.has(t.toLowerCase())) return;
       existing.add(t.toLowerCase());
-      trip[importKind].push({id:uid(), text:t, done:false});
+      trip[importKind].push(mkItem(t, false));
       added++;
     });
   }
