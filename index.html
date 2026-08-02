@@ -100,6 +100,15 @@
   }
   /* eerste tik op ✕ vraagt bevestiging */
   button.armed{color:#b0473f !important; font-weight:700;}
+  .list-more{display:flex; justify-content:center; padding:2px 0 0;}
+  .more-btn{
+    border:none; background:none; cursor:pointer; font-family:'Inter';
+    font-size:12px; font-weight:600; color:var(--accent-color, var(--gr-accent));
+    padding:5px 8px; border-radius:6px;
+  }
+  @media (hover:hover){
+    .more-btn:hover{background:var(--paper-dim);}
+  }
   .mini-add{display:flex; gap:6px; margin-top:10px;}
   .mini-add input{flex:1; border:1px solid var(--line); border-radius:7px; padding:7px 9px; font-size:13px; font-family:'Inter';}
   .mini-add button{border:none; background:var(--accent-color, var(--gr-accent)); color:white; border-radius:7px; padding:0 12px; font-size:13px; cursor:pointer; font-weight:600;}
@@ -427,6 +436,11 @@ let editingItemId = null;
 let editingTripId = null;
 let deleteArmed = false;
 
+// Lange lijsten worden ingeklapt tot de eerste paar items met een
+// "lees meer"-knop, zodat je vlot naar de dagindeling kan scrollen.
+const CHECKLIST_COLLAPSE_LIMIT = 5;
+let expandedLists = {packing:false, prep:false};
+
 function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
 
 function fmtISO(d){
@@ -679,6 +693,7 @@ if('serviceWorker' in navigator){
 
 function switchTrip(id){
   currentTripId = id;
+  expandedLists = {packing:false, prep:false};
   renderAll();
 }
 
@@ -750,7 +765,9 @@ function renderAll(){
 function renderChecklist(ulId, arr, kind){
   const ul = document.getElementById(ulId);
   ul.innerHTML = '';
-  arr.forEach(it=>{
+  const collapsed = !expandedLists[kind] && arr.length > CHECKLIST_COLLAPSE_LIMIT;
+  const visible = collapsed ? arr.slice(0, CHECKLIST_COLLAPSE_LIMIT) : arr;
+  visible.forEach(it=>{
     const li = document.createElement('li');
     li.className = 'panel-item' + (it.done?' done':'');
     li.innerHTML = `
@@ -760,6 +777,16 @@ function renderChecklist(ulId, arr, kind){
     `;
     ul.appendChild(li);
   });
+  if(arr.length > CHECKLIST_COLLAPSE_LIMIT){
+    const li = document.createElement('li');
+    li.className = 'list-more';
+    const btn = document.createElement('button');
+    btn.className = 'more-btn';
+    btn.textContent = collapsed ? `▾ Lees meer (${arr.length - CHECKLIST_COLLAPSE_LIMIT})` : '▴ Lees minder';
+    btn.onclick = ()=>{ expandedLists[kind] = !expandedLists[kind]; renderChecklist(ulId, arr, kind); };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  }
 }
 
 function toggleChecklist(kind, id){
@@ -781,6 +808,7 @@ function addPacking(){
   if(!trip || !inp.value.trim()) return;
   trip.packing.push({id:uid(), text:inp.value.trim(), done:false});
   inp.value='';
+  expandedLists.packing = true;
   persist();
   renderChecklist('packingList', trip.packing, 'packing');
 }
@@ -790,6 +818,7 @@ function addPrep(){
   if(!trip || !inp.value.trim()) return;
   trip.prep.push({id:uid(), text:inp.value.trim(), done:false});
   inp.value='';
+  expandedLists.prep = true;
   persist();
   renderChecklist('prepList', trip.prep, 'prep');
 }
