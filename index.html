@@ -89,8 +89,10 @@
   @media (hover:hover){
     .panel-item:hover{background:var(--paper-dim);}
     .panel-item .del{opacity:0;}
-    .panel-item:hover .del{opacity:1;}
+    .panel-item:hover .del, .panel-item .del.armed{opacity:1;}
   }
+  /* eerste tik op ✕ vraagt bevestiging */
+  button.armed{color:#b0473f !important; font-weight:700;}
   .mini-add{display:flex; gap:6px; margin-top:10px;}
   .mini-add input{flex:1; border:1px solid var(--line); border-radius:7px; padding:7px 9px; font-size:13px; font-family:'Inter';}
   .mini-add button{border:none; background:var(--accent-color, var(--gr-accent)); color:white; border-radius:7px; padding:0 12px; font-size:13px; cursor:pointer; font-weight:600;}
@@ -633,6 +635,23 @@ function switchTrip(id){
   renderAll();
 }
 
+// Wissen in twee stappen: eerste tik wapent ("Zeker?"), tweede tik binnen
+// 3 seconden wist echt; daarna springt de knop vanzelf terug.
+let pendingDeleteId = null;
+let pendingDeleteTimer = null;
+function armDelete(id, rerender){
+  if(pendingDeleteId === id){
+    clearTimeout(pendingDeleteTimer);
+    pendingDeleteId = null;
+    return true;
+  }
+  pendingDeleteId = id;
+  clearTimeout(pendingDeleteTimer);
+  pendingDeleteTimer = setTimeout(()=>{ pendingDeleteId = null; rerender(); }, 3000);
+  rerender();
+  return false;
+}
+
 function renderTabs(){
   const wrap = document.getElementById('tabs');
   wrap.innerHTML = '';
@@ -690,7 +709,7 @@ function renderChecklist(ulId, arr, kind){
     li.innerHTML = `
       <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}')">
       <span>${escapeHtml(it.text)}</span>
-      <button class="del" onclick="removeChecklist('${kind}','${it.id}')">✕</button>
+      <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
     `;
     ul.appendChild(li);
   });
@@ -703,9 +722,11 @@ function toggleChecklist(kind, id){
 }
 function removeChecklist(kind, id){
   const trip = getTrip();
+  const rerender = ()=>renderChecklist(kind==='packing'?'packingList':'prepList', trip[kind], kind);
+  if(!armDelete(id, rerender)) return;
   trip[kind] = trip[kind].filter(x=>x.id!==id);
   persist();
-  renderChecklist(kind==='packing'?'packingList':'prepList', trip[kind], kind);
+  rerender();
 }
 function addPacking(){
   const trip = getTrip();
@@ -817,7 +838,7 @@ function makeCard(it){
     <div class="card-controls">
       <button onclick="toggleItemDone('${it.id}')">${it.done?'↺ heropen':'✓ gedaan'}</button>
       <button onclick="toggleLock('${it.id}')">${it.locked?'🔓 losmaken':'🔒 vastzetten'}</button>
-      <button onclick="deleteItem('${it.id}')">✕</button>
+      <button class="${pendingDeleteId===it.id?'armed':''}" onclick="deleteItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
     </div>
   `;
   // Klik op het kaartje zelf opent het detail; knoppen en links gaan voor.
@@ -850,6 +871,7 @@ function toggleLock(id){
   if(it){ it.locked = !it.locked; persist(); renderBoard(); }
 }
 function deleteItem(id){
+  if(!armDelete(id, renderBoard)) return;
   const trip = getTrip();
   trip.items = trip.items.filter(x=>x.id!==id);
   persist();
