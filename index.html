@@ -89,7 +89,22 @@
     display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
   }
   .panel-item input[type=checkbox]{accent-color:var(--accent-color, var(--gr-accent)); width:16px; height:16px; flex:none;}
-  .panel-item.done span{text-decoration:line-through; color:#b0a89b;}
+  .panel-item .pi-text{min-width:0; overflow-wrap:anywhere;}
+  .panel-item.done .pi-text{text-decoration:line-through; color:#b0a89b;}
+  .tag-general{
+    font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+    color:#9a9284; border:1px solid var(--line); border-radius:999px; padding:1px 6px;
+    white-space:nowrap; flex:none;
+  }
+  .left-out{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; font-size:11px; color:#9a9284;}
+  .left-out:empty{margin-top:0;}
+  .lo-chip{
+    border:1px dashed var(--line); background:none; border-radius:999px; padding:2px 9px;
+    cursor:pointer; font-family:'Inter'; font-size:11px; color:#7a7266;
+  }
+  @media (hover:hover){ .lo-chip:hover{border-color:#b0a89b; color:var(--ink);} }
+  .add-scope{display:flex; align-items:center; gap:6px; margin-top:8px; font-size:11.5px; color:#8a8175; cursor:pointer;}
+  .add-scope input{width:14px; height:14px; flex:none; accent-color:var(--accent-color, var(--gr-accent));}
   .panel-item .del{margin-left:auto; cursor:pointer; color:#c0392b; font-size:12px; border:none; background:none; padding:4px 6px;}
   /* Hover-effecten enkel op apparaten met een muis; op touch veroorzaken
      :hover-regels het iOS "dubbele tik"-gedrag en blijft de wisknop zichtbaar. */
@@ -267,21 +282,25 @@
 <main>
   <div class="sidebar">
     <section class="panel" id="packingPanel">
-      <h3>🧳 Inpaklijst <button class="panel-import" onclick="openCopyModal('packing')" title="Overnemen van een andere vakantie">📥</button></h3>
+      <h3>🧳 Inpaklijst <button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
       <ul class="panel-list" id="packingList"></ul>
+      <div class="left-out" id="packingLeftOut"></div>
       <div class="mini-add">
-        <input type="text" id="packingInput" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addPacking()">
-        <button onclick="addPacking()">+</button>
+        <input type="text" id="packingInput" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('packing')">
+        <button onclick="addChecklistItem('packing')">+</button>
       </div>
+      <label class="add-scope"><input type="checkbox" id="packingGeneral"> Ook op al mijn vakanties (algemeen)</label>
     </section>
 
     <section class="panel" id="prepPanel">
-      <h3>✅ Voor te bereiden <button class="panel-import" onclick="openCopyModal('prep')" title="Overnemen van een andere vakantie">📥</button></h3>
+      <h3>✅ Voor te bereiden <button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
       <ul class="panel-list" id="prepList"></ul>
+      <div class="left-out" id="prepLeftOut"></div>
       <div class="mini-add">
-        <input type="text" id="prepInput" placeholder="To-do toevoegen…" onkeydown="if(event.key==='Enter')addPrep()">
-        <button onclick="addPrep()">+</button>
+        <input type="text" id="prepInput" placeholder="To-do toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('prep')">
+        <button onclick="addChecklistItem('prep')">+</button>
       </div>
+      <label class="add-scope"><input type="checkbox" id="prepGeneral"> Ook op al mijn vakanties (algemeen)</label>
     </section>
   </div>
 
@@ -380,10 +399,6 @@
         <input type="date" id="tripEndInput">
       </div>
     </div>
-    <div id="tripCopyRow">
-      <label>Inpak- &amp; voorbereidingslijst overnemen van (optioneel)</label>
-      <select id="tripCopyInput"></select>
-    </div>
     <div class="gate-error" id="tripModalError"></div>
     <div class="modal-actions">
       <button class="btn-danger" id="tripDeleteBtn" onclick="deleteTrip()">Verwijderen</button>
@@ -393,17 +408,17 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="copyModalBackdrop">
+<div class="modal-backdrop" id="tmplModalBackdrop">
   <div class="modal">
-    <h3 id="copyModalTitle">Lijst overnemen</h3>
-    <p style="font-size:13px; color:#6b6459; margin:0;">Kies een vakantie om de items van over te nemen. Bestaande items blijven staan; dubbels worden overgeslagen.</p>
-    <div>
-      <label>Overnemen van</label>
-      <select id="copyFromTripInput"></select>
+    <h3 id="tmplModalTitle">Algemene lijst</h3>
+    <p style="font-size:13px; color:#6b6459; margin:0;">Deze items staan standaard op elke vakantie. Verwijder je hier iets, dan verdwijnt het overal. Per vakantie kan je items apart weglaten of extra items toevoegen.</p>
+    <ul class="panel-list" id="tmplList" style="max-height:48vh; overflow:auto;"></ul>
+    <div class="mini-add">
+      <input type="text" id="tmplInput" placeholder="Algemeen item toevoegen…" onkeydown="if(event.key==='Enter')addTemplateItem()">
+      <button onclick="addTemplateItem()">+</button>
     </div>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeCopyModal()">Annuleren</button>
-      <button class="btn-primary" onclick="confirmCopyList()">Overnemen</button>
+      <button class="btn-primary" onclick="closeTemplateModal()">Klaar</button>
     </div>
   </div>
 </div>
@@ -471,56 +486,131 @@ function ensureCurrentTrip(){
   if(!getTrip()) currentTripId = state.trips[0] ? state.trips[0].id : null;
 }
 
+function emptyTemplateState(){
+  return {packing:{done:{}, skip:{}}, prep:{done:{}, skip:{}}};
+}
+
 function defaultState(){
-  return {trips:[
-    {
-      id:uid(), name:'Griekenland', emoji:'🇬🇷', transport:'✈️ Vliegtuig',
-      startDate:nextMonday(), endDate:addDays(nextMonday(),6),
+  const passport = uid();
+  const phone = uid();
+  return {
+    _templateSeeded:true,
+    template:{
       packing:[
-        {id:uid(), text:'Paspoort / ID', done:false},
-        {id:uid(), text:'Zonnebrand', done:false},
-        {id:uid(), text:'Snorkelspullen', done:false}
+        {id:passport, text:'Paspoort / ID'},
+        {id:phone, text:'Telefoon + oplader'}
       ],
-      prep:[
-        {id:uid(), text:'Auto huren regelen', done:false},
-        {id:uid(), text:'Kat/planten opvang regelen', done:false}
-      ],
-      items:[]
+      prep:[]
     },
-    {
-      id:uid(), name:'Zuid-Frankrijk', emoji:'🇫🇷', transport:'🚗 Auto',
-      startDate:nextMonday(14), endDate:addDays(nextMonday(14),6),
-      packing:[
-        {id:uid(), text:'Wegenkaart / vignet', done:false},
-        {id:uid(), text:'Paspoort / ID', done:false}
-      ],
-      prep:[
-        {id:uid(), text:'Route uitstippelen', done:false}
-      ],
-      items:[
-        {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
-      ]
-    }
-  ]};
+    trips:[
+      {
+        id:uid(), name:'Griekenland', emoji:'🇬🇷', transport:'✈️ Vliegtuig',
+        startDate:nextMonday(), endDate:addDays(nextMonday(),6),
+        packing:[
+          {id:uid(), text:'Zonnebrand', done:false},
+          {id:uid(), text:'Snorkelspullen', done:false}
+        ],
+        prep:[
+          {id:uid(), text:'Auto huren regelen', done:false},
+          {id:uid(), text:'Kat/planten opvang regelen', done:false}
+        ],
+        items:[],
+        templateState:emptyTemplateState()
+      },
+      {
+        id:uid(), name:'Zuid-Frankrijk', emoji:'🇫🇷', transport:'🚗 Auto',
+        startDate:nextMonday(14), endDate:addDays(nextMonday(14),6),
+        packing:[
+          {id:uid(), text:'Wegenkaart / vignet', done:false}
+        ],
+        prep:[
+          {id:uid(), text:'Route uitstippelen', done:false}
+        ],
+        items:[
+          {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
+        ],
+        templateState:emptyTemplateState()
+      }
+    ]
+  };
 }
 
 // Oude vorm ({greece:{...}, france:{...}} met duration) omzetten naar de trips-lijst.
 function migrateState(s){
   if(!s) return null;
-  if(s.trips) return s;
-  const out = {trips:[]};
-  [['greece','Griekenland','🇬🇷'],['france','Zuid-Frankrijk','🇫🇷']].forEach(([key, name, emoji])=>{
-    const t = s[key];
-    if(!t) return;
-    out.trips.push({
-      id:uid(), name, emoji,
-      transport:t.transport||'✈️ Vliegtuig',
-      startDate:t.startDate,
-      endDate:addDays(t.startDate, Math.max(1, t.duration||7)-1),
-      packing:t.packing||[], prep:t.prep||[], items:t.items||[]
+  if(!s.trips){
+    const out = {trips:[]};
+    [['greece','Griekenland','🇬🇷'],['france','Zuid-Frankrijk','🇫🇷']].forEach(([key, name, emoji])=>{
+      const t = s[key];
+      if(!t) return;
+      out.trips.push({
+        id:uid(), name, emoji,
+        transport:t.transport||'✈️ Vliegtuig',
+        startDate:t.startDate,
+        endDate:addDays(t.startDate, Math.max(1, t.duration||7)-1),
+        packing:t.packing||[], prep:t.prep||[], items:t.items||[]
+      });
+    });
+    s = out;
+  }
+  return migrateTemplate(s);
+}
+
+// Voegt de "algemene lijst" toe aan bestaande data zonder iets te verliezen.
+// Items die in ÁLLE vakanties voorkomen worden éénmalig naar de algemene
+// lijst gepromoveerd; unieke items blijven vakantie-specifiek staan.
+function migrateTemplate(s){
+  if(!s || !s.trips) return s;
+  s.template = s.template || {packing:[], prep:[]};
+  ['packing','prep'].forEach(k=>{ if(!Array.isArray(s.template[k])) s.template[k] = []; });
+  s.trips.forEach(t=>{
+    t.packing = Array.isArray(t.packing) ? t.packing : [];
+    t.prep = Array.isArray(t.prep) ? t.prep : [];
+    t.templateState = t.templateState || emptyTemplateState();
+    ['packing','prep'].forEach(k=>{
+      t.templateState[k] = t.templateState[k] || {done:{}, skip:{}};
+      t.templateState[k].done = t.templateState[k].done || {};
+      t.templateState[k].skip = t.templateState[k].skip || {};
     });
   });
-  return out;
+
+  // Eénmalige seed: gemeenschappelijke items -> algemene lijst.
+  if(!s._templateSeeded){
+    if(s.trips.length >= 2 && s.template.packing.length === 0 && s.template.prep.length === 0){
+      const norm = txt => (txt||'').trim().toLowerCase();
+      ['packing','prep'].forEach(kind=>{
+        const perTrip = s.trips.map(t => {
+          const m = new Map();
+          t[kind].forEach(it => m.set(norm(it.text), it));
+          return m;
+        });
+        const common = [...perTrip[0].keys()].filter(key => key && perTrip.every(m => m.has(key)));
+        common.forEach(key=>{
+          const tid = uid();
+          s.template[kind].push({id:tid, text:perTrip[0].get(key).text});
+          s.trips.forEach((t, i)=>{
+            const it = perTrip[i].get(key);
+            if(it && it.done) t.templateState[kind].done[tid] = true;
+            t[kind] = t[kind].filter(x => x !== it);
+          });
+        });
+      });
+    }
+    s._templateSeeded = true;
+  }
+  return s;
+}
+
+// De items zoals ze op deze vakantie gelden: algemene items (behalve de
+// weggelaten) plus de vakantie-eigen items.
+function effectiveList(trip, kind){
+  const tmpl = (state.template && state.template[kind]) || [];
+  const ts = (trip.templateState && trip.templateState[kind]) || {done:{}, skip:{}};
+  const general = tmpl
+    .filter(ti => !ts.skip[ti.id])
+    .map(ti => ({id:ti.id, text:ti.text, done:!!ts.done[ti.id], general:true}));
+  const extras = trip[kind].map(it => ({id:it.id, text:it.text, done:!!it.done, general:false}));
+  return {general, extras};
 }
 
 const STORAGE_KEY = 'vakantie-planner-state';
@@ -572,6 +662,7 @@ async function loadState(){
   if(!REMOTE_ENABLED){
     state = migrateState(readLocalCache()) || defaultState();
     ensureCurrentTrip();
+    writeLocalCache();
     return;
   }
   const key = localStorage.getItem(ACCESS_KEY_STORAGE);
@@ -595,7 +686,8 @@ async function loadState(){
       state = migrateState(readLocalCache()) || migrateState(remote);
       await pushLocal(key);
     } else {
-      const needsMigration = !remote.trips;
+      // Push terug bij een schema-migratie (oude vorm of nog geen algemene lijst).
+      const needsMigration = !remote.trips || !remote.template;
       state = migrateState(remote);
       writeLocalCache();
       if(needsMigration) await pushLocal(key);
@@ -757,70 +849,118 @@ function renderAll(){
   document.getElementById('tripSummary').textContent =
     `${fmtDate(trip.startDate,0)} – ${fmtDate(trip.startDate,days-1)} · ${days} ${days===1?'dag':'dagen'} · ${trip.transport}`;
 
-  renderChecklist('packingList', trip.packing, 'packing');
-  renderChecklist('prepList', trip.prep, 'prep');
+  renderChecklist('packing');
+  renderChecklist('prep');
   renderBoard();
 }
 
-function renderChecklist(ulId, arr, kind){
-  const ul = document.getElementById(ulId);
+function checklistUlId(kind){ return kind==='packing' ? 'packingList' : 'prepList'; }
+
+function renderChecklist(kind){
+  const trip = getTrip();
+  const ul = document.getElementById(checklistUlId(kind));
+  const area = document.getElementById(kind==='packing' ? 'packingLeftOut' : 'prepLeftOut');
   ul.innerHTML = '';
-  const collapsed = !expandedLists[kind] && arr.length > CHECKLIST_COLLAPSE_LIMIT;
-  const visible = collapsed ? arr.slice(0, CHECKLIST_COLLAPSE_LIMIT) : arr;
+  area.innerHTML = '';
+  if(!trip) return;
+
+  const {general, extras} = effectiveList(trip, kind);
+  const items = general.concat(extras);
+  const collapsed = !expandedLists[kind] && items.length > CHECKLIST_COLLAPSE_LIMIT;
+  const visible = collapsed ? items.slice(0, CHECKLIST_COLLAPSE_LIMIT) : items;
+
   visible.forEach(it=>{
     const li = document.createElement('li');
     li.className = 'panel-item' + (it.done?' done':'');
+    const delBtn = it.general
+      ? `<button class="del" title="Weglaten voor deze vakantie" onclick="removeChecklist('${kind}','${it.id}',true)">✕</button>`
+      : `<button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}',false)">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>`;
     li.innerHTML = `
-      <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}')">
-      <span>${escapeHtml(it.text)}</span>
-      <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
+      <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}',${it.general})">
+      <span class="pi-text">${escapeHtml(it.text)}</span>
+      ${it.general ? '<span class="tag-general" title="Staat op elke vakantie">algemeen</span>' : ''}
+      ${delBtn}
     `;
     ul.appendChild(li);
   });
-  if(arr.length > CHECKLIST_COLLAPSE_LIMIT){
+
+  if(items.length > CHECKLIST_COLLAPSE_LIMIT){
     const li = document.createElement('li');
     li.className = 'list-more';
     const btn = document.createElement('button');
     btn.className = 'more-btn';
-    btn.textContent = collapsed ? `▾ Lees meer (${arr.length - CHECKLIST_COLLAPSE_LIMIT})` : '▴ Lees minder';
-    btn.onclick = ()=>{ expandedLists[kind] = !expandedLists[kind]; renderChecklist(ulId, arr, kind); };
+    btn.textContent = collapsed ? `▾ Lees meer (${items.length - CHECKLIST_COLLAPSE_LIMIT})` : '▴ Lees minder';
+    btn.onclick = ()=>{ expandedLists[kind] = !expandedLists[kind]; renderChecklist(kind); };
     li.appendChild(btn);
     ul.appendChild(li);
   }
+
+  // Weggelaten algemene items: als chips om terug toe te voegen.
+  const ts = trip.templateState[kind];
+  const skipped = ((state.template && state.template[kind]) || []).filter(ti => ts.skip[ti.id]);
+  if(skipped.length){
+    const lbl = document.createElement('span');
+    lbl.textContent = 'Weggelaten:';
+    area.appendChild(lbl);
+    skipped.forEach(ti=>{
+      const chip = document.createElement('button');
+      chip.className = 'lo-chip';
+      chip.textContent = '+ ' + ti.text;
+      chip.title = 'Terug toevoegen aan deze vakantie';
+      chip.onclick = ()=>restoreTemplateItem(kind, ti.id);
+      area.appendChild(chip);
+    });
+  }
 }
 
-function toggleChecklist(kind, id){
-  const arr = getTrip()[kind];
-  const it = arr.find(x=>x.id===id);
-  if(it){ it.done = !it.done; persist(); renderChecklist(kind==='packing'?'packingList':'prepList', arr, kind); }
-}
-function removeChecklist(kind, id){
+function toggleChecklist(kind, id, general){
   const trip = getTrip();
-  const rerender = ()=>renderChecklist(kind==='packing'?'packingList':'prepList', trip[kind], kind);
-  if(!armDelete(id, rerender)) return;
+  if(general){
+    const ts = trip.templateState[kind];
+    ts.done[id] = !ts.done[id];
+  } else {
+    const it = trip[kind].find(x=>x.id===id);
+    if(it) it.done = !it.done;
+  }
+  persist();
+  renderChecklist(kind);
+}
+function removeChecklist(kind, id, general){
+  const trip = getTrip();
+  if(general){
+    // Algemeen item enkel voor deze vakantie weglaten (omkeerbaar via chip).
+    trip.templateState[kind].skip[id] = true;
+    persist();
+    renderChecklist(kind);
+    return;
+  }
+  if(!armDelete(id, ()=>renderChecklist(kind))) return;
   trip[kind] = trip[kind].filter(x=>x.id!==id);
   persist();
-  rerender();
+  renderChecklist(kind);
 }
-function addPacking(){
+function restoreTemplateItem(kind, id){
   const trip = getTrip();
-  const inp = document.getElementById('packingInput');
-  if(!trip || !inp.value.trim()) return;
-  trip.packing.push({id:uid(), text:inp.value.trim(), done:false});
-  inp.value='';
-  expandedLists.packing = true;
+  delete trip.templateState[kind].skip[id];
   persist();
-  renderChecklist('packingList', trip.packing, 'packing');
+  renderChecklist(kind);
 }
-function addPrep(){
+function addChecklistItem(kind){
   const trip = getTrip();
-  const inp = document.getElementById('prepInput');
-  if(!trip || !inp.value.trim()) return;
-  trip.prep.push({id:uid(), text:inp.value.trim(), done:false});
+  if(!trip) return;
+  const inp = document.getElementById(kind==='packing' ? 'packingInput' : 'prepInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  const generalBox = document.getElementById(kind==='packing' ? 'packingGeneral' : 'prepGeneral');
+  if(generalBox.checked){
+    state.template[kind].push({id:uid(), text});
+  } else {
+    trip[kind].push({id:uid(), text, done:false});
+  }
   inp.value='';
-  expandedLists.prep = true;
+  expandedLists[kind] = true;
   persist();
-  renderChecklist('prepList', trip.prep, 'prep');
+  renderChecklist(kind);
 }
 
 function fmtDate(startDate, dayOffset){
@@ -1084,26 +1224,6 @@ function openTripModal(tripId){
   document.getElementById('tripStartInput').value = trip ? trip.startDate : nextMonday();
   document.getElementById('tripEndInput').value = trip ? trip.endDate : addDays(nextMonday(),6);
   document.getElementById('tripModalError').textContent = '';
-
-  // Bij een nieuwe vakantie: aanbieden om de lijsten van een bestaande
-  // vakantie over te nemen, zodat je niet telkens van nul begint.
-  const copyRow = document.getElementById('tripCopyRow');
-  const copySel = document.getElementById('tripCopyInput');
-  const others = state.trips.filter(t => t.id !== (trip ? trip.id : null));
-  if(!trip && others.length){
-    copyRow.style.display = '';
-    copySel.innerHTML = '<option value="">— Niets overnemen —</option>';
-    others.forEach(t=>{
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = `${t.emoji||'🌍'} ${t.name}`.trim();
-      copySel.appendChild(opt);
-    });
-  } else {
-    copyRow.style.display = 'none';
-    copySel.innerHTML = '';
-  }
-
   const del = document.getElementById('tripDeleteBtn');
   del.style.display = trip ? '' : 'none';
   del.textContent = 'Verwijderen';
@@ -1129,14 +1249,8 @@ function saveTrip(){
   if(trip){
     Object.assign(trip, {name, emoji, transport, startDate, endDate});
   } else {
-    trip = {id:uid(), name, emoji, transport, startDate, endDate, packing:[], prep:[], items:[]};
-    // Lijsten overnemen van een gekozen vakantie (afvinkstatus resetten).
-    const copyFromId = document.getElementById('tripCopyInput').value;
-    const src = copyFromId ? state.trips.find(t=>t.id===copyFromId) : null;
-    if(src){
-      trip.packing = (src.packing||[]).map(p=>({id:uid(), text:p.text, done:false}));
-      trip.prep = (src.prep||[]).map(p=>({id:uid(), text:p.text, done:false}));
-    }
+    // Nieuwe vakantie erft automatisch de algemene lijst; enkel eigen extra's.
+    trip = {id:uid(), name, emoji, transport, startDate, endDate, packing:[], prep:[], items:[], templateState:emptyTemplateState()};
     state.trips.push(trip);
     currentTripId = trip.id;
   }
@@ -1163,47 +1277,62 @@ function deleteTrip(){
   renderAll();
 }
 
-/* ---- lijst overnemen van een andere vakantie ---- */
-let copyKind = null;
-function openCopyModal(kind){
-  const trip = getTrip();
-  if(!trip) return;
-  const others = state.trips.filter(t=>t.id!==trip.id);
-  if(others.length===0){
-    alert('Er is nog geen andere vakantie om lijsten van over te nemen.');
+/* ---- algemene (standaard) lijst beheren ---- */
+let tmplKind = null;
+function openTemplateModal(kind){
+  tmplKind = kind;
+  document.getElementById('tmplModalTitle').textContent =
+    kind==='packing' ? '🧳 Algemene inpaklijst' : '✅ Algemene voorbereiding';
+  document.getElementById('tmplInput').value = '';
+  renderTemplateList();
+  document.getElementById('tmplModalBackdrop').classList.add('open');
+}
+function closeTemplateModal(){
+  document.getElementById('tmplModalBackdrop').classList.remove('open');
+  tmplKind = null;
+  renderAll();
+}
+function renderTemplateList(){
+  const ul = document.getElementById('tmplList');
+  ul.innerHTML = '';
+  const arr = (state.template && state.template[tmplKind]) || [];
+  if(!arr.length){
+    const li = document.createElement('li');
+    li.className = 'empty-hint';
+    li.textContent = 'Nog geen algemene items — voeg er hieronder toe.';
+    ul.appendChild(li);
     return;
   }
-  copyKind = kind;
-  document.getElementById('copyModalTitle').textContent =
-    kind==='packing' ? '🧳 Inpaklijst overnemen' : '✅ Voorbereiding overnemen';
-  const sel = document.getElementById('copyFromTripInput');
-  sel.innerHTML = '';
-  others.forEach(t=>{
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = `${t.emoji||'🌍'} ${t.name}`.trim();
-    sel.appendChild(opt);
+  arr.forEach(it=>{
+    const li = document.createElement('li');
+    li.className = 'panel-item';
+    li.innerHTML = `
+      <span class="pi-text" style="flex:1;">${escapeHtml(it.text)}</span>
+      <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeTemplateItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
+    `;
+    ul.appendChild(li);
   });
-  document.getElementById('copyModalBackdrop').classList.add('open');
 }
-function closeCopyModal(){
-  document.getElementById('copyModalBackdrop').classList.remove('open');
-  copyKind = null;
+function addTemplateItem(){
+  const inp = document.getElementById('tmplInput');
+  const text = inp.value.trim();
+  if(!text || !tmplKind) return;
+  state.template[tmplKind].push({id:uid(), text});
+  inp.value='';
+  persist();
+  renderTemplateList();
 }
-function confirmCopyList(){
-  const trip = getTrip();
-  const from = state.trips.find(t=>t.id===document.getElementById('copyFromTripInput').value);
-  if(!trip || !from || !copyKind) return;
-  const existing = new Set(trip[copyKind].map(x=>x.text.trim().toLowerCase()));
-  (from[copyKind]||[]).forEach(it=>{
-    const key = it.text.trim().toLowerCase();
-    if(existing.has(key)) return;
-    existing.add(key);
-    trip[copyKind].push({id:uid(), text:it.text, done:false});
+function removeTemplateItem(id){
+  if(!armDelete(id, renderTemplateList)) return;
+  state.template[tmplKind] = state.template[tmplKind].filter(x=>x.id!==id);
+  // Opruimen van per-vakantie verwijzingen naar dit algemene item.
+  state.trips.forEach(t=>{
+    const ts = t.templateState[tmplKind];
+    delete ts.done[id];
+    delete ts.skip[id];
   });
   persist();
-  closeCopyModal();
-  renderAll();
+  renderTemplateList();
 }
 
 function shareStatus(){
@@ -1254,17 +1383,21 @@ function shareStatus(){
   }
   lines.push('');
 
-  const packDone = trip.packing.filter(p=>p.done).length;
-  lines.push(`🧳 Inpaklijst: ${packDone}/${trip.packing.length} gepakt`);
-  const packLeft = trip.packing.filter(p=>!p.done);
+  const pk = effectiveList(trip, 'packing');
+  const packItems = pk.general.concat(pk.extras);
+  const packDone = packItems.filter(p=>p.done).length;
+  lines.push(`🧳 Inpaklijst: ${packDone}/${packItems.length} gepakt`);
+  const packLeft = packItems.filter(p=>!p.done);
   if(packLeft.length>0){
     packLeft.slice(0,6).forEach(p=>lines.push(`  ⬜ ${p.text}`));
     if(packLeft.length>6) lines.push(`  …en ${packLeft.length-6} meer`);
   }
   lines.push('');
 
-  const prepDone = trip.prep.filter(p=>p.done).length;
-  lines.push(`✅ Voorbereiding: ${prepDone}/${trip.prep.length} gedaan`);
+  const pr = effectiveList(trip, 'prep');
+  const prepItems = pr.general.concat(pr.extras);
+  const prepDone = prepItems.filter(p=>p.done).length;
+  lines.push(`✅ Voorbereiding: ${prepDone}/${prepItems.length} gedaan`);
 
   const text = lines.join('\n');
 
