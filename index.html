@@ -137,6 +137,16 @@
   .col-title{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#7a7266; margin-bottom:2px;}
   .col-sub{font-size:11px; color:#9a9284; margin:-4px 0 6px;}
 
+  /* mini-tijdlijn per dag (8u–22u): toont in één oogopslag welke
+     dagdelen gevuld zijn */
+  .timeline{position:relative; height:10px; background:rgba(0,0,0,.06); border-radius:5px; margin:0 0 4px;}
+  .timeline .tl-block{
+    position:absolute; top:0; bottom:0; border-radius:5px; min-width:5px;
+    background:var(--accent-color, var(--gr-accent)); opacity:.85;
+  }
+  .timeline .tl-tick{position:absolute; top:-1px; bottom:-1px; width:1px; background:rgba(0,0,0,.15);}
+  .timeline-labels{display:flex; justify-content:space-between; font-size:9px; color:#b0a89b; margin:0 0 6px;}
+
   .card{
     background:white; border-radius:9px; padding:9px 10px; font-size:13px; box-shadow:0 1px 2px rgba(0,0,0,.06);
     cursor:grab; border-left:3px solid var(--accent-color, var(--gr-accent)); position:relative;
@@ -147,6 +157,7 @@
   .card-top{display:flex; gap:6px; align-items:flex-start;}
   .card-title{flex:1; line-height:1.3;}
   .pin{font-size:12px;}
+  .card-time{font-size:11px; font-weight:600; color:#5f574a; margin-top:3px;}
   .card-notes{
     font-size:11.5px; color:#8a8175; margin-top:5px; white-space:pre-line;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
@@ -176,7 +187,7 @@
   }
   .modal h3{margin:0; font-size:16px;}
   .modal label{font-size:12px; font-weight:600; color:#6b6459; display:block; margin-bottom:4px;}
-  .modal input[type=text], .modal input[type=date], .modal select, .modal textarea{
+  .modal input[type=text], .modal input[type=date], .modal input[type=time], .modal select, .modal textarea{
     width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:'Inter';
   }
   .modal textarea{resize:vertical; min-height:70px;}
@@ -296,6 +307,16 @@
     <div>
       <label>Locatie of link (optioneel)</label>
       <input type="text" id="itemLocationInput" placeholder="bv. Oude haven Chania, of een www-link">
+    </div>
+    <div class="row">
+      <div>
+        <label>Van (optioneel)</label>
+        <input type="time" id="itemStartTimeInput">
+      </div>
+      <div>
+        <label>Tot (optioneel)</label>
+        <input type="time" id="itemEndTimeInput">
+      </div>
     </div>
     <div>
       <label>Notities (optioneel)</label>
@@ -753,6 +774,53 @@ function fmtDate(startDate, dayOffset){
   return d.toLocaleDateString('nl-BE', {weekday:'short', day:'numeric', month:'short'});
 }
 
+function timeToMin(t){
+  const [h, m] = t.split(':').map(Number);
+  return h*60 + m;
+}
+// Eindtijd van een item in minuten; zonder (geldige) eindtijd rekenen we 1u.
+function itemEndMin(it){
+  const start = timeToMin(it.startTime);
+  if(it.endTime && timeToMin(it.endTime) > start) return timeToMin(it.endTime);
+  return start + 60;
+}
+function fmtTimeRange(it){
+  if(!it.startTime) return '';
+  if(it.endTime && timeToMin(it.endTime) > timeToMin(it.startTime)) return `${it.startTime}–${it.endTime}`;
+  return it.startTime;
+}
+
+function makeTimeline(timedItems){
+  const frag = document.createDocumentFragment();
+  const rangeMin = Math.min(8*60, ...timedItems.map(it=>timeToMin(it.startTime)));
+  const rangeMax = Math.max(22*60, ...timedItems.map(itemEndMin));
+  const span = rangeMax - rangeMin;
+  const bar = document.createElement('div');
+  bar.className = 'timeline';
+  [12*60, 18*60].forEach(t=>{
+    if(t>rangeMin && t<rangeMax){
+      const tick = document.createElement('div');
+      tick.className = 'tl-tick';
+      tick.style.left = ((t-rangeMin)/span*100)+'%';
+      bar.appendChild(tick);
+    }
+  });
+  timedItems.forEach(it=>{
+    const b = document.createElement('div');
+    b.className = 'tl-block';
+    b.style.left = ((timeToMin(it.startTime)-rangeMin)/span*100)+'%';
+    b.style.width = ((itemEndMin(it)-timeToMin(it.startTime))/span*100)+'%';
+    b.title = `${fmtTimeRange(it)} ${it.title}`;
+    bar.appendChild(b);
+  });
+  frag.appendChild(bar);
+  const labels = document.createElement('div');
+  labels.className = 'timeline-labels';
+  labels.innerHTML = `<span>${Math.floor(rangeMin/60)}u</span><span>${Math.ceil(rangeMax/60)}u</span>`;
+  frag.appendChild(labels);
+  return frag;
+}
+
 function renderBoard(){
   const trip = getTrip();
   const board = document.getElementById('board');
@@ -794,6 +862,17 @@ function makeColumn(key, label, dayIndex, trip){
   }
 
   const items = trip.items.filter(it => dayIndex===null ? (it.day===null||it.day===undefined) : it.day===dayIndex);
+  // Items met een uur eerst, chronologisch; items zonder uur daaronder.
+  items.sort((a,b)=>{
+    const ta = a.startTime ? timeToMin(a.startTime) : Infinity;
+    const tb = b.startTime ? timeToMin(b.startTime) : Infinity;
+    return ta - tb;
+  });
+
+  if(dayIndex!==null){
+    const timed = items.filter(it=>it.startTime);
+    if(timed.length) col.appendChild(makeTimeline(timed));
+  }
 
   if(items.length===0 && dayIndex===null){
     const hint = document.createElement('div');
@@ -833,6 +912,7 @@ function makeCard(it){
       <span class="card-title">${escapeHtml(it.title)}</span>
       ${it.locked?'<span class="pin" title="Vastgezet op deze datum">📌</span>':''}
     </div>
+    ${it.startTime?`<div class="card-time">🕘 ${fmtTimeRange(it)}</div>`:''}
     ${notes?`<div class="card-notes">${escapeHtml(notes)}</div>`:''}
     ${locationLinksHtml(it)}
     <div class="card-controls">
@@ -891,6 +971,8 @@ function openItemModal(existing){
   document.getElementById('itemTitleInput').value = existing ? existing.title : '';
   document.getElementById('itemCategoryInput').value = existing ? existing.category : '🎯';
   document.getElementById('itemLocationInput').value = existing ? (existing.location||'') : '';
+  document.getElementById('itemStartTimeInput').value = existing ? (existing.startTime||'') : '';
+  document.getElementById('itemEndTimeInput').value = existing ? (existing.endTime||'') : '';
   document.getElementById('itemNotesInput').value = existing ? (existing.notes||'') : '';
   document.getElementById('itemLockedInput').checked = existing ? !!existing.locked : false;
 
@@ -919,14 +1001,16 @@ function saveItem(){
   const dayVal = document.getElementById('itemDayInput').value;
   const day = dayVal==='none' ? null : parseInt(dayVal);
   const location = document.getElementById('itemLocationInput').value.trim();
+  const startTime = document.getElementById('itemStartTimeInput').value;
+  const endTime = document.getElementById('itemEndTimeInput').value;
   const notes = document.getElementById('itemNotesInput').value.trim();
   const locked = document.getElementById('itemLockedInput').checked;
 
   if(editingItemId){
     const it = getTrip().items.find(x=>x.id===editingItemId);
-    Object.assign(it, {title, category, day, location, notes, locked});
+    Object.assign(it, {title, category, day, location, startTime, endTime, notes, locked});
   } else {
-    getTrip().items.push({id:uid(), title, category, day, location, notes, locked, done:false});
+    getTrip().items.push({id:uid(), title, category, day, location, startTime, endTime, notes, locked, done:false});
   }
   persist();
   closeItemModal();
@@ -1013,18 +1097,20 @@ function shareStatus(){
 
   if(diffDays>=0 && diffDays<days){
     lines.push(`📍 Vandaag — Dag ${diffDays+1} (${fmtDate(trip.startDate,diffDays)}):`);
-    const todayItems = trip.items.filter(it=>it.day===diffDays);
+    const itemLine = (it)=>`  ${it.done?'✅':'⬜'}${it.startTime?` ${fmtTimeRange(it)}`:''} ${it.category||''} ${it.title}${it.locked?' 📌':''}`;
+    const byTime = (a,b)=>(a.startTime?timeToMin(a.startTime):Infinity)-(b.startTime?timeToMin(b.startTime):Infinity);
+    const todayItems = trip.items.filter(it=>it.day===diffDays).sort(byTime);
     if(todayItems.length===0){
       lines.push('  (niets gepland)');
     } else {
-      todayItems.forEach(it=>lines.push(`  ${it.done?'✅':'⬜'} ${it.category||''} ${it.title}${it.locked?' 📌':''}`));
+      todayItems.forEach(it=>lines.push(itemLine(it)));
     }
     lines.push('');
     if(diffDays+1<days){
       lines.push(`🗓️ Morgen (${fmtDate(trip.startDate,diffDays+1)}):`);
-      const tmrw = trip.items.filter(it=>it.day===diffDays+1);
+      const tmrw = trip.items.filter(it=>it.day===diffDays+1).sort(byTime);
       if(tmrw.length===0) lines.push('  (nog niets gepland)');
-      else tmrw.forEach(it=>lines.push(`  ${it.done?'✅':'⬜'} ${it.category||''} ${it.title}${it.locked?' 📌':''}`));
+      else tmrw.forEach(it=>lines.push(itemLine(it)));
       lines.push('');
     }
   } else if(diffDays<0){
