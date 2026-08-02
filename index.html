@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vakantieplanner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --ink:#2b2b2b;
+    --paper:#faf7f1;
+    --paper-dim:#f1ece2;
+    --line:#ddd4c4;
+
+    /* Greece */
+    --gr-deep:#123a5c;
+    --gr-mid:#2f6690;
+    --gr-accent:#e0672e;
+    --gr-wash:#eef4f7;
+
+    /* France */
+    --fr-deep:#5b4a72;
+    --fr-mid:#8c76a8;
+    --fr-accent:#c98a2c;
+    --fr-wash:#f6f0e8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Fraunces',serif; font-weight:650;}
+
+  /* ---- header / passport stamp tabs ---- */
+  header{
+    padding:28px clamp(16px,4vw,48px) 0;
+  }
+  .title-row{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+  .title-row h1{font-size:clamp(24px,3.5vw,34px); margin:0; letter-spacing:-0.01em;}
+  .subtitle{font-size:13px; color:#8a8175; margin-top:2px;}
+
+  .tabs{display:flex; gap:14px; margin:20px 0 0;}
+  .tab{
+    position:relative; cursor:pointer; border:2px solid var(--line); border-radius:999px;
+    padding:10px 22px 10px 46px; background:var(--paper); font-weight:600; font-size:14px;
+    transition:all .18s ease; user-select:none;
+  }
+  .tab .stamp{
+    position:absolute; left:8px; top:50%; transform:translateY(-50%) rotate(-8deg);
+    width:26px; height:26px; border-radius:50%; border:2px solid currentColor;
+    display:flex; align-items:center; justify-content:center; font-size:13px;
+  }
+  .tab.greece{color:var(--gr-deep);}
+  .tab.france{color:var(--fr-deep);}
+  .tab.active.greece{background:var(--gr-deep); color:white; border-color:var(--gr-deep);}
+  .tab.active.france{background:var(--fr-deep); color:white; border-color:var(--fr-deep);}
+  .tab.active .stamp{border-color:white;}
+
+  .trip-meta{display:flex; gap:18px; align-items:center; margin:16px 0; flex-wrap:wrap; font-size:13px; color:#6b6459;}
+  .trip-meta input{
+    font-family:'Inter'; font-size:13px; border:1px solid var(--line); border-radius:6px;
+    padding:5px 8px; background:white; color:var(--ink);
+  }
+  .trip-meta label{display:flex; align-items:center; gap:6px;}
+
+  main{padding:0 clamp(16px,4vw,48px) 48px; display:grid; grid-template-columns:280px 1fr; gap:28px;}
+  @media (max-width:880px){ main{grid-template-columns:1fr;} }
+
+  section.panel{
+    background:white; border:1px solid var(--line); border-radius:14px; padding:18px;
+  }
+  section.panel h3{font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px;}
+  .panel-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+  .panel-item{
+    display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
+  }
+  .panel-item:hover{background:var(--paper-dim);}
+  .panel-item input[type=checkbox]{accent-color:var(--accent-color, var(--gr-accent)); width:16px; height:16px; flex:none;}
+  .panel-item.done span{text-decoration:line-through; color:#b0a89b;}
+  .panel-item .del{margin-left:auto; opacity:0; cursor:pointer; color:#c0392b; font-size:12px; border:none; background:none;}
+  .panel-item:hover .del{opacity:1;}
+  .mini-add{display:flex; gap:6px; margin-top:10px;}
+  .mini-add input{flex:1; border:1px solid var(--line); border-radius:7px; padding:7px 9px; font-size:13px; font-family:'Inter';}
+  .mini-add button{border:none; background:var(--accent-color, var(--gr-accent)); color:white; border-radius:7px; padding:0 12px; font-size:13px; cursor:pointer; font-weight:600;}
+
+  .sidebar{display:flex; flex-direction:column; gap:20px;}
+
+  /* board */
+  .board-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;}
+  .board-header h3{margin:0; font-size:15px; display:flex; gap:8px; align-items:center;}
+  .board-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .add-item-btn{
+    border:none; background:var(--accent-color, var(--gr-accent)); color:white; border-radius:8px;
+    padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;
+  }
+  .add-item-btn.secondary{background:var(--paper-dim); color:var(--ink);}
+
+  @media (max-width:520px){
+    .board-header{flex-direction:column; align-items:stretch;}
+    .board-actions{width:100%;}
+    .board-actions .add-item-btn{flex:1; padding:12px 10px; text-align:center;}
+    .tabs{flex-wrap:wrap;}
+    .tab{flex:1; text-align:center; padding-left:40px;}
+  }
+  .board{
+    display:flex; gap:14px; overflow-x:auto; padding-bottom:10px;
+  }
+  .column{
+    min-width:210px; max-width:230px; flex:none; background:var(--wash-color, var(--gr-wash));
+    border-radius:12px; padding:12px; min-height:340px; display:flex; flex-direction:column; gap:8px;
+    border:1px solid transparent;
+  }
+  .column.dragover{border-color:var(--accent-color, var(--gr-accent)); background:white;}
+  .column.unscheduled{background:var(--paper-dim);}
+  .col-title{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#7a7266; margin-bottom:2px;}
+  .col-sub{font-size:11px; color:#9a9284; margin:-4px 0 6px;}
+
+  .card{
+    background:white; border-radius:9px; padding:9px 10px; font-size:13px; box-shadow:0 1px 2px rgba(0,0,0,.06);
+    cursor:grab; border-left:3px solid var(--accent-color, var(--gr-accent)); position:relative;
+  }
+  .card.locked{border-left-color:#b0473f; background:#fff8f6;}
+  .card.done{opacity:.5;}
+  .card.done .card-title{text-decoration:line-through;}
+  .card-top{display:flex; gap:6px; align-items:flex-start;}
+  .card-title{flex:1; line-height:1.3;}
+  .pin{font-size:12px;}
+  .card-controls{display:flex; gap:6px; margin-top:6px; font-size:11px;}
+  .card-controls button{
+    border:none; background:none; cursor:pointer; color:#8a8175; padding:2px 4px; font-size:11px;
+  }
+  .card-controls button:hover{color:var(--ink);}
+  .empty-hint{font-size:12px; color:#b0a89b; text-align:center; margin-top:20px;}
+
+  /* modal */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(30,25,20,.4); display:none; align-items:center; justify-content:center; z-index:50;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:white; border-radius:14px; padding:22px; width:min(400px,90vw);
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .modal h3{margin:0; font-size:16px;}
+  .modal label{font-size:12px; font-weight:600; color:#6b6459; display:block; margin-bottom:4px;}
+  .modal input[type=text], .modal select{
+    width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:'Inter';
+  }
+  .modal .row{display:flex; gap:10px;}
+  .modal .row > div{flex:1;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:6px;}
+  .modal-actions button{border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;}
+  .btn-ghost{background:var(--paper-dim); color:var(--ink);}
+  .btn-primary{background:var(--accent-color, var(--gr-accent)); color:white;}
+  .check-row{display:flex; align-items:center; gap:8px; font-size:13px;}
+
+  .save-note{position:fixed; bottom:14px; right:18px; font-size:11px; color:#a89f92; opacity:0; transition:opacity .3s;}
+  .save-note.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <h1 class="display">Vakantieplanner</h1>
+    <span class="subtitle">Alles op één plek — verschuif gerust, wat vast staat blijft vast.</span>
+  </div>
+  <div class="tabs">
+    <div class="tab greece active" data-trip="greece" onclick="switchTrip('greece')">
+      <span class="stamp">🇬🇷</span> Griekenland
+    </div>
+    <div class="tab france" data-trip="france" onclick="switchTrip('france')">
+      <span class="stamp">🇫🇷</span> Zuid-Frankrijk
+    </div>
+  </div>
+  <div class="trip-meta">
+    <label>Startdatum <input type="date" id="startDateInput" onchange="updateTripMeta()"></label>
+    <label>Aantal dagen <input type="number" id="durationInput" min="1" max="21" style="width:60px" onchange="updateTripMeta()"></label>
+    <label>Vervoer
+      <select id="transportInput" onchange="updateTripMeta()" style="border:1px solid var(--line); border-radius:6px; padding:5px 8px; font-family:'Inter'; font-size:13px;">
+        <option value="✈️ Vliegtuig">✈️ Vliegtuig</option>
+        <option value="🚗 Auto">🚗 Auto</option>
+      </select>
+    </label>
+    <span style="margin-left:auto; display:flex; gap:6px;">
+      <button onclick="exportBackup()" style="border:1px solid var(--line); background:white; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">⬇ Exporteer back-up</button>
+      <label style="border:1px solid var(--line); background:white; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">
+        ⬆ Importeer back-up
+        <input type="file" accept="application/json" onchange="importBackup(this)" style="display:none;">
+      </label>
+    </span>
+  </div>
+</header>
+
+<main>
+  <div class="sidebar">
+    <section class="panel" id="packingPanel">
+      <h3>🧳 Inpaklijst</h3>
+      <ul class="panel-list" id="packingList"></ul>
+      <div class="mini-add">
+        <input type="text" id="packingInput" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addPacking()">
+        <button onclick="addPacking()">+</button>
+      </div>
+    </section>
+
+    <section class="panel" id="prepPanel">
+      <h3>✅ Voor te bereiden</h3>
+      <ul class="panel-list" id="prepList"></ul>
+      <div class="mini-add">
+        <input type="text" id="prepInput" placeholder="To-do toevoegen…" onkeydown="if(event.key==='Enter')addPrep()">
+        <button onclick="addPrep()">+</button>
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <div class="board-header">
+      <h3>📍 Dagindeling &amp; activiteiten</h3>
+      <div class="board-actions">
+        <button class="add-item-btn secondary" onclick="shareStatus()">📤 Deel status</button>
+        <button class="add-item-btn" onclick="openItemModal()">+ Nieuw item</button>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+</main>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Nieuw item</h3>
+    <div>
+      <label>Titel</label>
+      <input type="text" id="itemTitleInput" placeholder="bv. Markt in Aix-en-Provence">
+    </div>
+    <div class="row">
+      <div>
+        <label>Categorie</label>
+        <select id="itemCategoryInput">
+          <option value="🎯">🎯 Activiteit</option>
+          <option value="🍽️">🍽️ Eten</option>
+          <option value="🚌">🚌 Vervoer</option>
+          <option value="🛍️">🛍️ Markt/winkel</option>
+          <option value="📌">📌 Overig</option>
+        </select>
+      </div>
+      <div>
+        <label>Dag</label>
+        <select id="itemDayInput"></select>
+      </div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="itemLockedInput">
+      <label style="margin:0;">Vastgezet op deze dag (bv. marktdag — kan niet zomaar verschuiven)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeItemModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveItem()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="save-note" id="saveNote">Opgeslagen ✓</div>
+
+<script>
+const THEMES = {
+  greece: {accent:'--gr-accent', wash:'--gr-wash', deep:'--gr-deep'},
+  france: {accent:'--fr-accent', wash:'--fr-wash', deep:'--fr-deep'}
+};
+
+let state = null;
+let currentTrip = 'greece';
+let editingItemId = null;
+
+function defaultState(){
+  return {
+    greece: {
+      startDate: nextMonday(), duration: 7, transport: '✈️ Vliegtuig',
+      packing: [
+        {id:uid(), text:'Paspoort / ID', done:false},
+        {id:uid(), text:'Zonnebrand', done:false},
+        {id:uid(), text:'Snorkelspullen', done:false}
+      ],
+      prep: [
+        {id:uid(), text:'Auto huren regelen', done:false},
+        {id:uid(), text:'Kat/planten opvang regelen', done:false}
+      ],
+      items: []
+    },
+    france: {
+      startDate: nextMonday(14), duration: 7, transport: '🚗 Auto',
+      packing: [
+        {id:uid(), text:'Wegenkaart / vignet', done:false},
+        {id:uid(), text:'Paspoort / ID', done:false}
+      ],
+      prep: [
+        {id:uid(), text:'Route uitstippelen', done:false}
+      ],
+      items: [
+        {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false}
+      ]
+    }
+  };
+}
+
+function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
+function nextMonday(offsetDays=0){
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays + ((8 - d.getDay()) % 7 || 7));
+  return d.toISOString().slice(0,10);
+}
+
+const STORAGE_KEY = 'vakantie-planner-state';
+
+async function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      state = JSON.parse(raw);
+      return;
+    }
+  }catch(e){ console.error('Kon opgeslagen data niet lezen', e); }
+  state = defaultState();
+  persist();
+}
+
+async function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    flashSaved();
+  }catch(e){
+    console.error('Opslaan mislukt', e);
+    alert('Opslaan is mislukt. Maak een back-up via "Exporteer back-up" zodat je niets verliest.');
+  }
+}
+
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vakantieplanner-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed.greece || !parsed.france) throw new Error('Onherkenbaar formaat');
+      state = parsed;
+      persist();
+      renderAll();
+      alert('Back-up geladen.');
+    }catch(err){
+      alert('Kon dit bestand niet inladen: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function flashSaved(){
+  const n = document.getElementById('saveNote');
+  n.classList.add('show');
+  clearTimeout(flashSaved._t);
+  flashSaved._t = setTimeout(()=>n.classList.remove('show'), 900);
+}
+
+function applyTheme(trip){
+  const t = THEMES[trip];
+  const root = document.documentElement;
+  document.querySelectorAll('.panel').forEach(p=>p.style.setProperty('--accent-color', getComputedStyle(root).getPropertyValue(t.accent)));
+  document.getElementById('board').style.setProperty('--accent-color', getComputedStyle(root).getPropertyValue(t.accent));
+}
+
+function switchTrip(trip){
+  currentTrip = trip;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active', el.dataset.trip===trip));
+  renderAll();
+}
+
+function updateTripMeta(){
+  const trip = state[currentTrip];
+  trip.startDate = document.getElementById('startDateInput').value || trip.startDate;
+  trip.duration = Math.max(1, parseInt(document.getElementById('durationInput').value)||trip.duration);
+  trip.transport = document.getElementById('transportInput').value;
+  persist();
+  renderBoard();
+}
+
+function renderAll(){
+  const trip = state[currentTrip];
+  document.getElementById('startDateInput').value = trip.startDate;
+  document.getElementById('durationInput').value = trip.duration;
+  document.getElementById('transportInput').value = trip.transport;
+
+  const accentVar = currentTrip==='greece' ? '--gr-accent' : '--fr-accent';
+  const washVar = currentTrip==='greece' ? '--gr-wash' : '--fr-wash';
+  const root = getComputedStyle(document.documentElement);
+  document.getElementById('packingPanel').style.setProperty('--accent-color', root.getPropertyValue(accentVar));
+  document.getElementById('prepPanel').style.setProperty('--accent-color', root.getPropertyValue(accentVar));
+  document.getElementById('board').style.setProperty('--accent-color', root.getPropertyValue(accentVar));
+  document.getElementById('board').style.setProperty('--wash-color', root.getPropertyValue(washVar));
+
+  renderChecklist('packingList', trip.packing, 'packing');
+  renderChecklist('prepList', trip.prep, 'prep');
+  renderBoard();
+}
+
+function renderChecklist(ulId, arr, kind){
+  const ul = document.getElementById(ulId);
+  ul.innerHTML = '';
+  arr.forEach(it=>{
+    const li = document.createElement('li');
+    li.className = 'panel-item' + (it.done?' done':'');
+    li.innerHTML = `
+      <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}')">
+      <span>${escapeHtml(it.text)}</span>
+      <button class="del" onclick="removeChecklist('${kind}','${it.id}')">✕</button>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function toggleChecklist(kind, id){
+  const arr = state[currentTrip][kind];
+  const it = arr.find(x=>x.id===id);
+  if(it){ it.done = !it.done; persist(); renderChecklist(kind==='packing'?'packingList':'prepList', arr, kind); }
+}
+function removeChecklist(kind, id){
+  state[currentTrip][kind] = state[currentTrip][kind].filter(x=>x.id!==id);
+  persist();
+  renderChecklist(kind==='packing'?'packingList':'prepList', state[currentTrip][kind], kind);
+}
+function addPacking(){
+  const inp = document.getElementById('packingInput');
+  if(!inp.value.trim()) return;
+  state[currentTrip].packing.push({id:uid(), text:inp.value.trim(), done:false});
+  inp.value='';
+  persist();
+  renderChecklist('packingList', state[currentTrip].packing, 'packing');
+}
+function addPrep(){
+  const inp = document.getElementById('prepInput');
+  if(!inp.value.trim()) return;
+  state[currentTrip].prep.push({id:uid(), text:inp.value.trim(), done:false});
+  inp.value='';
+  persist();
+  renderChecklist('prepList', state[currentTrip].prep, 'prep');
+}
+
+function fmtDate(startDate, dayOffset){
+  const d = new Date(startDate+'T00:00:00');
+  d.setDate(d.getDate()+dayOffset);
+  return d.toLocaleDateString('nl-BE', {weekday:'short', day:'numeric', month:'short'});
+}
+
+function renderBoard(){
+  const trip = state[currentTrip];
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  // unscheduled column first
+  board.appendChild(makeColumn('unscheduled', 'Nog te plannen', null, trip));
+
+  for(let d=0; d<trip.duration; d++){
+    board.appendChild(makeColumn('day'+d, fmtDate(trip.startDate,d), d, trip));
+  }
+}
+
+function makeColumn(key, label, dayIndex, trip){
+  const col = document.createElement('div');
+  col.className = 'column' + (dayIndex===null?' unscheduled':'');
+  col.dataset.day = dayIndex===null ? 'none' : dayIndex;
+  col.ondragover = (e)=>{ e.preventDefault(); col.classList.add('dragover'); };
+  col.ondragleave = ()=>col.classList.remove('dragover');
+  col.ondrop = (e)=>{
+    e.preventDefault();
+    col.classList.remove('dragover');
+    const itemId = e.dataTransfer.getData('text/plain');
+    moveItem(itemId, dayIndex);
+  };
+
+  const title = document.createElement('div');
+  title.className = 'col-title';
+  title.textContent = dayIndex===null ? label : `Dag ${dayIndex+1}`;
+  col.appendChild(title);
+
+  if(dayIndex!==null){
+    const sub = document.createElement('div');
+    sub.className = 'col-sub';
+    sub.textContent = label;
+    col.appendChild(sub);
+  }
+
+  const items = trip.items.filter(it => dayIndex===null ? (it.day===null||it.day===undefined) : it.day===dayIndex);
+
+  if(items.length===0 && dayIndex===null){
+    const hint = document.createElement('div');
+    hint.className = 'empty-hint';
+    hint.textContent = 'Sleep hier items die nog geen datum hebben.';
+    col.appendChild(hint);
+  }
+
+  items.forEach(it=>col.appendChild(makeCard(it)));
+
+  return col;
+}
+
+function makeCard(it){
+  const card = document.createElement('div');
+  card.className = 'card' + (it.locked?' locked':'') + (it.done?' done':'');
+  card.draggable = !it.locked;
+  card.ondragstart = (e)=>{ e.dataTransfer.setData('text/plain', it.id); };
+  card.innerHTML = `
+    <div class="card-top">
+      <span>${it.category||'📌'}</span>
+      <span class="card-title">${escapeHtml(it.title)}</span>
+      ${it.locked?'<span class="pin" title="Vastgezet op deze datum">📌</span>':''}
+    </div>
+    <div class="card-controls">
+      <button onclick="toggleItemDone('${it.id}')">${it.done?'↺ heropen':'✓ gedaan'}</button>
+      <button onclick="toggleLock('${it.id}')">${it.locked?'🔓 losmaken':'🔒 vastzetten'}</button>
+      <button onclick="editItem('${it.id}')">✎</button>
+      <button onclick="deleteItem('${it.id}')">✕</button>
+    </div>
+  `;
+  return card;
+}
+
+function moveItem(itemId, dayIndex){
+  const trip = state[currentTrip];
+  const it = trip.items.find(x=>x.id===itemId);
+  if(!it) return;
+  if(it.locked){
+    alert('Dit item staat vast op zijn dag omdat het aan een specifieke datum gebonden is (bv. een markt). Maak het eerst los via 🔓 als je het echt wil verschuiven.');
+    return;
+  }
+  it.day = dayIndex;
+  persist();
+  renderBoard();
+}
+
+function toggleItemDone(id){
+  const it = state[currentTrip].items.find(x=>x.id===id);
+  if(it){ it.done = !it.done; persist(); renderBoard(); }
+}
+function toggleLock(id){
+  const it = state[currentTrip].items.find(x=>x.id===id);
+  if(it){ it.locked = !it.locked; persist(); renderBoard(); }
+}
+function deleteItem(id){
+  state[currentTrip].items = state[currentTrip].items.filter(x=>x.id!==id);
+  persist();
+  renderBoard();
+}
+function editItem(id){
+  const it = state[currentTrip].items.find(x=>x.id===id);
+  if(!it) return;
+  editingItemId = id;
+  openItemModal(it);
+}
+
+function openItemModal(existing){
+  document.getElementById('modalTitle').textContent = existing ? 'Item bewerken' : 'Nieuw item';
+  document.getElementById('itemTitleInput').value = existing ? existing.title : '';
+  document.getElementById('itemCategoryInput').value = existing ? existing.category : '🎯';
+  document.getElementById('itemLockedInput').checked = existing ? !!existing.locked : false;
+
+  const daySelect = document.getElementById('itemDayInput');
+  daySelect.innerHTML = '<option value="none">Nog te plannen</option>';
+  const trip = state[currentTrip];
+  for(let d=0; d<trip.duration; d++){
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = `Dag ${d+1} — ${fmtDate(trip.startDate,d)}`;
+    daySelect.appendChild(opt);
+  }
+  daySelect.value = existing && existing.day!==null && existing.day!==undefined ? existing.day : 'none';
+
+  if(!existing) editingItemId = null;
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+function closeItemModal(){
+  document.getElementById('modalBackdrop').classList.remove('open');
+  editingItemId = null;
+}
+function saveItem(){
+  const title = document.getElementById('itemTitleInput').value.trim();
+  if(!title){ return; }
+  const category = document.getElementById('itemCategoryInput').value;
+  const dayVal = document.getElementById('itemDayInput').value;
+  const day = dayVal==='none' ? null : parseInt(dayVal);
+  const locked = document.getElementById('itemLockedInput').checked;
+
+  if(editingItemId){
+    const it = state[currentTrip].items.find(x=>x.id===editingItemId);
+    Object.assign(it, {title, category, day, locked});
+  } else {
+    state[currentTrip].items.push({id:uid(), title, category, day, locked, done:false});
+  }
+  persist();
+  closeItemModal();
+  renderBoard();
+}
+
+function shareStatus(){
+  const trip = state[currentTrip];
+  const tripLabel = currentTrip==='greece' ? 'Griekenland 🇬🇷' : 'Zuid-Frankrijk 🇫🇷';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(trip.startDate+'T00:00:00');
+  const diffDays = Math.round((today-start)/86400000);
+
+  const lines = [];
+  lines.push(`*${tripLabel} — status*`);
+  lines.push(`(${new Date().toLocaleDateString('nl-BE',{day:'numeric',month:'long'})})`);
+  lines.push('');
+
+  if(diffDays>=0 && diffDays<trip.duration){
+    lines.push(`📍 Vandaag — Dag ${diffDays+1} (${fmtDate(trip.startDate,diffDays)}):`);
+    const todayItems = trip.items.filter(it=>it.day===diffDays);
+    if(todayItems.length===0){
+      lines.push('  (niets gepland)');
+    } else {
+      todayItems.forEach(it=>lines.push(`  ${it.done?'✅':'⬜'} ${it.category||''} ${it.title}${it.locked?' 📌':''}`));
+    }
+    lines.push('');
+    if(diffDays+1<trip.duration){
+      lines.push(`🗓️ Morgen (${fmtDate(trip.startDate,diffDays+1)}):`);
+      const tmrw = trip.items.filter(it=>it.day===diffDays+1);
+      if(tmrw.length===0) lines.push('  (nog niets gepland)');
+      else tmrw.forEach(it=>lines.push(`  ${it.done?'✅':'⬜'} ${it.category||''} ${it.title}${it.locked?' 📌':''}`));
+      lines.push('');
+    }
+  } else if(diffDays<0){
+    lines.push(`🕐 Nog ${-diffDays} dag(en) tot vertrek.`);
+    lines.push('');
+  } else {
+    lines.push('🏁 Reis is voorbij.');
+    lines.push('');
+  }
+
+  const unscheduled = trip.items.filter(it=>it.day===null||it.day===undefined);
+  lines.push(`📋 Nog te plannen: ${unscheduled.length} item(s)`);
+  if(unscheduled.length>0){
+    unscheduled.slice(0,5).forEach(it=>lines.push(`  • ${it.title}`));
+    if(unscheduled.length>5) lines.push(`  …en ${unscheduled.length-5} meer`);
+  }
+  lines.push('');
+
+  const packDone = trip.packing.filter(p=>p.done).length;
+  lines.push(`🧳 Inpaklijst: ${packDone}/${trip.packing.length} gepakt`);
+  const packLeft = trip.packing.filter(p=>!p.done);
+  if(packLeft.length>0){
+    packLeft.slice(0,6).forEach(p=>lines.push(`  ⬜ ${p.text}`));
+    if(packLeft.length>6) lines.push(`  …en ${packLeft.length-6} meer`);
+  }
+  lines.push('');
+
+  const prepDone = trip.prep.filter(p=>p.done).length;
+  lines.push(`✅ Voorbereiding: ${prepDone}/${trip.prep.length} gedaan`);
+
+  const text = lines.join('\n');
+
+  if(navigator.share){
+    navigator.share({title:`${tripLabel} — status`, text}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert('Status gekopieerd naar klembord — plak het in WhatsApp of waar je wil.');
+    }).catch(()=>{
+      prompt('Kopieer deze status manueel:', text);
+    });
+  } else {
+    prompt('Kopieer deze status manueel:', text);
+  }
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+(async function init(){
+  await loadState();
+  renderAll();
+})();
+</script>
+</body>
+</html>
