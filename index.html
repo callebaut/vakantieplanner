@@ -13,17 +13,10 @@
     --paper-dim:#f1ece2;
     --line:#ddd4c4;
 
-    /* Greece */
     --gr-deep:#123a5c;
     --gr-mid:#2f6690;
     --gr-accent:#e0672e;
     --gr-wash:#eef4f7;
-
-    /* France */
-    --fr-deep:#5b4a72;
-    --fr-mid:#8c76a8;
-    --fr-accent:#c98a2c;
-    --fr-wash:#f6f0e8;
   }
   *{box-sizing:border-box;}
   body{
@@ -41,29 +34,31 @@
   .title-row h1{font-size:clamp(24px,3.5vw,34px); margin:0; letter-spacing:-0.01em;}
   .subtitle{font-size:13px; color:#8a8175; margin-top:2px;}
 
-  .tabs{display:flex; gap:14px; margin:20px 0 0;}
+  .tabs{display:flex; gap:14px; margin:20px 0 0; flex-wrap:wrap; align-items:center;}
   .tab{
     position:relative; cursor:pointer; border:2px solid var(--line); border-radius:999px;
     padding:10px 22px 10px 46px; background:var(--paper); font-weight:600; font-size:14px;
     transition:all .18s ease; user-select:none;
+    color:var(--tab-deep, var(--gr-deep));
   }
   .tab .stamp{
     position:absolute; left:8px; top:50%; transform:translateY(-50%) rotate(-8deg);
     width:26px; height:26px; border-radius:50%; border:2px solid currentColor;
     display:flex; align-items:center; justify-content:center; font-size:13px;
   }
-  .tab.greece{color:var(--gr-deep);}
-  .tab.france{color:var(--fr-deep);}
-  .tab.active.greece{background:var(--gr-deep); color:white; border-color:var(--gr-deep);}
-  .tab.active.france{background:var(--fr-deep); color:white; border-color:var(--fr-deep);}
+  .tab.active{background:var(--tab-deep, var(--gr-deep)); color:white; border-color:var(--tab-deep, var(--gr-deep));}
   .tab.active .stamp{border-color:white;}
-
-  .trip-meta{display:flex; gap:18px; align-items:center; margin:16px 0; flex-wrap:wrap; font-size:13px; color:#6b6459;}
-  .trip-meta input{
-    font-family:'Inter'; font-size:13px; border:1px solid var(--line); border-radius:6px;
-    padding:5px 8px; background:white; color:var(--ink);
+  .tab-add{
+    cursor:pointer; border:2px dashed var(--line); border-radius:999px; padding:10px 18px;
+    background:none; font-weight:600; font-size:14px; color:#8a8175; font-family:'Inter';
   }
-  .trip-meta label{display:flex; align-items:center; gap:6px;}
+  .tab-add:hover{color:var(--ink); border-color:#b0a89b;}
+
+  .trip-meta{display:flex; gap:14px; align-items:center; margin:16px 0; flex-wrap:wrap; font-size:13px; color:#6b6459;}
+  .meta-btn{
+    border:1px solid var(--line); background:white; border-radius:6px; padding:5px 10px;
+    font-size:12px; cursor:pointer; font-family:'Inter'; color:var(--ink);
+  }
 
   main{padding:0 clamp(16px,4vw,48px) 48px; display:grid; grid-template-columns:280px 1fr; gap:28px;}
   main > div{min-width:0;}
@@ -102,7 +97,6 @@
     .board-header{flex-direction:column; align-items:stretch;}
     .board-actions{width:100%;}
     .board-actions .add-item-btn{flex:1; padding:12px 10px; text-align:center;}
-    .tabs{flex-wrap:wrap;}
     .tab{flex:1; text-align:center; padding-left:40px;}
   }
   .board{
@@ -132,6 +126,9 @@
   .card-top{display:flex; gap:6px; align-items:flex-start;}
   .card-title{flex:1; line-height:1.3;}
   .pin{font-size:12px;}
+  .card-loc{display:flex; gap:12px; margin-top:5px; font-size:11px;}
+  .card-loc a{color:var(--accent-color, var(--gr-accent)); text-decoration:none; font-weight:600;}
+  .card-loc a:hover{text-decoration:underline;}
   .card-controls{display:flex; gap:6px; margin-top:6px; font-size:11px;}
   .card-controls button{
     border:none; background:none; cursor:pointer; color:#8a8175; padding:2px 4px; font-size:11px;
@@ -150,7 +147,7 @@
   }
   .modal h3{margin:0; font-size:16px;}
   .modal label{font-size:12px; font-weight:600; color:#6b6459; display:block; margin-bottom:4px;}
-  .modal input[type=text], .modal select{
+  .modal input[type=text], .modal input[type=date], .modal select{
     width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:'Inter';
   }
   .modal .row{display:flex; gap:10px;}
@@ -159,6 +156,7 @@
   .modal-actions button{border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;}
   .btn-ghost{background:var(--paper-dim); color:var(--ink);}
   .btn-primary{background:var(--accent-color, var(--gr-accent)); color:white;}
+  .btn-danger{background:#fdeeec; color:#b0473f; margin-right:auto;}
   .check-row{display:flex; align-items:center; gap:8px; font-size:13px;}
 
   .save-note{position:fixed; bottom:14px; right:18px; font-size:11px; color:#a89f92; opacity:0; transition:opacity .3s;}
@@ -194,26 +192,13 @@
     <h1 class="display">Vakantieplanner</h1>
     <span class="subtitle">Alles op één plek — verschuif gerust, wat vast staat blijft vast.</span>
   </div>
-  <div class="tabs">
-    <div class="tab greece active" data-trip="greece" onclick="switchTrip('greece')">
-      <span class="stamp">🇬🇷</span> Griekenland
-    </div>
-    <div class="tab france" data-trip="france" onclick="switchTrip('france')">
-      <span class="stamp">🇫🇷</span> Zuid-Frankrijk
-    </div>
-  </div>
+  <div class="tabs" id="tabs"></div>
   <div class="trip-meta">
-    <label>Startdatum <input type="date" id="startDateInput" onchange="updateTripMeta()"></label>
-    <label>Aantal dagen <input type="number" id="durationInput" min="1" max="21" style="width:60px" onchange="updateTripMeta()"></label>
-    <label>Vervoer
-      <select id="transportInput" onchange="updateTripMeta()" style="border:1px solid var(--line); border-radius:6px; padding:5px 8px; font-family:'Inter'; font-size:13px;">
-        <option value="✈️ Vliegtuig">✈️ Vliegtuig</option>
-        <option value="🚗 Auto">🚗 Auto</option>
-      </select>
-    </label>
+    <span id="tripSummary"></span>
+    <button class="meta-btn" id="tripSettingsBtn" onclick="openTripModal(currentTripId)">⚙️ Instellingen</button>
     <span style="margin-left:auto; display:flex; gap:6px;">
-      <button onclick="exportBackup()" style="border:1px solid var(--line); background:white; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">⬇ Exporteer back-up</button>
-      <label style="border:1px solid var(--line); background:white; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">
+      <button class="meta-btn" onclick="exportBackup()">⬇ Exporteer back-up</button>
+      <label class="meta-btn" style="display:inline-block;">
         ⬆ Importeer back-up
         <input type="file" accept="application/json" onchange="importBackup(this)" style="display:none;">
       </label>
@@ -277,6 +262,10 @@
         <select id="itemDayInput"></select>
       </div>
     </div>
+    <div>
+      <label>Locatie of link (optioneel)</label>
+      <input type="text" id="itemLocationInput" placeholder="bv. Oude haven Chania, of een www-link">
+    </div>
     <div class="check-row">
       <input type="checkbox" id="itemLockedInput">
       <label style="margin:0;">Vastgezet op deze dag (bv. marktdag — kan niet zomaar verschuiven)</label>
@@ -284,6 +273,46 @@
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeItemModal()">Annuleren</button>
       <button class="btn-primary" onclick="saveItem()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="tripModalBackdrop">
+  <div class="modal">
+    <h3 id="tripModalTitle">Nieuwe vakantie</h3>
+    <div class="row">
+      <div style="flex:3;">
+        <label>Naam</label>
+        <input type="text" id="tripNameInput" placeholder="bv. Griekenland">
+      </div>
+      <div style="flex:1;">
+        <label>Icoon</label>
+        <input type="text" id="tripEmojiInput" placeholder="🇬🇷" maxlength="4">
+      </div>
+    </div>
+    <div>
+      <label>Vervoer</label>
+      <select id="tripTransportInput">
+        <option value="✈️ Vliegtuig">✈️ Vliegtuig</option>
+        <option value="🚗 Auto">🚗 Auto</option>
+        <option value="🚆 Trein">🚆 Trein</option>
+      </select>
+    </div>
+    <div class="row">
+      <div>
+        <label>Startdatum</label>
+        <input type="date" id="tripStartInput">
+      </div>
+      <div>
+        <label>Einddatum</label>
+        <input type="date" id="tripEndInput">
+      </div>
+    </div>
+    <div class="gate-error" id="tripModalError"></div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="tripDeleteBtn" onclick="deleteTrip()">Verwijderen</button>
+      <button class="btn-ghost" onclick="closeTripModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveTrip()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -301,51 +330,100 @@
 <div class="save-note" id="saveNote">Opgeslagen ✓</div>
 
 <script>
-const THEMES = {
-  greece: {accent:'--gr-accent', wash:'--gr-wash', deep:'--gr-deep'},
-  france: {accent:'--fr-accent', wash:'--fr-wash', deep:'--fr-deep'}
-};
+const PALETTES = [
+  {deep:'#123a5c', accent:'#e0672e', wash:'#eef4f7'},
+  {deep:'#5b4a72', accent:'#c98a2c', wash:'#f6f0e8'},
+  {deep:'#2f5d3a', accent:'#c2503a', wash:'#eef5ec'},
+  {deep:'#7a3b2e', accent:'#2f6690', wash:'#f8efe9'},
+  {deep:'#3d5a66', accent:'#b0473f', wash:'#edf3f5'}
+];
 
 let state = null;
-let currentTrip = 'greece';
+let currentTripId = null;
 let editingItemId = null;
+let editingTripId = null;
+let deleteArmed = false;
+
+function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
+
+function fmtISO(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function addDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return fmtISO(d);
+}
+function nextMonday(offsetDays=0){
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays + ((8 - d.getDay()) % 7 || 7));
+  return fmtISO(d);
+}
+function tripDays(trip){
+  const s = new Date(trip.startDate+'T00:00:00');
+  const e = new Date(trip.endDate+'T00:00:00');
+  return Math.max(1, Math.round((e-s)/86400000)+1);
+}
+function getTrip(){
+  return state.trips.find(t=>t.id===currentTripId);
+}
+function tripPalette(trip){
+  return PALETTES[Math.max(0, state.trips.indexOf(trip)) % PALETTES.length];
+}
+function ensureCurrentTrip(){
+  if(!getTrip()) currentTripId = state.trips[0] ? state.trips[0].id : null;
+}
 
 function defaultState(){
-  return {
-    greece: {
-      startDate: nextMonday(), duration: 7, transport: '✈️ Vliegtuig',
-      packing: [
+  return {trips:[
+    {
+      id:uid(), name:'Griekenland', emoji:'🇬🇷', transport:'✈️ Vliegtuig',
+      startDate:nextMonday(), endDate:addDays(nextMonday(),6),
+      packing:[
         {id:uid(), text:'Paspoort / ID', done:false},
         {id:uid(), text:'Zonnebrand', done:false},
         {id:uid(), text:'Snorkelspullen', done:false}
       ],
-      prep: [
+      prep:[
         {id:uid(), text:'Auto huren regelen', done:false},
         {id:uid(), text:'Kat/planten opvang regelen', done:false}
       ],
-      items: []
+      items:[]
     },
-    france: {
-      startDate: nextMonday(14), duration: 7, transport: '🚗 Auto',
-      packing: [
+    {
+      id:uid(), name:'Zuid-Frankrijk', emoji:'🇫🇷', transport:'🚗 Auto',
+      startDate:nextMonday(14), endDate:addDays(nextMonday(14),6),
+      packing:[
         {id:uid(), text:'Wegenkaart / vignet', done:false},
         {id:uid(), text:'Paspoort / ID', done:false}
       ],
-      prep: [
+      prep:[
         {id:uid(), text:'Route uitstippelen', done:false}
       ],
-      items: [
-        {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false}
+      items:[
+        {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
       ]
     }
-  };
+  ]};
 }
 
-function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
-function nextMonday(offsetDays=0){
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays + ((8 - d.getDay()) % 7 || 7));
-  return d.toISOString().slice(0,10);
+// Oude vorm ({greece:{...}, france:{...}} met duration) omzetten naar de trips-lijst.
+function migrateState(s){
+  if(!s) return null;
+  if(s.trips) return s;
+  const out = {trips:[]};
+  [['greece','Griekenland','🇬🇷'],['france','Zuid-Frankrijk','🇫🇷']].forEach(([key, name, emoji])=>{
+    const t = s[key];
+    if(!t) return;
+    out.trips.push({
+      id:uid(), name, emoji,
+      transport:t.transport||'✈️ Vliegtuig',
+      startDate:t.startDate,
+      endDate:addDays(t.startDate, Math.max(1, t.duration||7)-1),
+      packing:t.packing||[], prep:t.prep||[], items:t.items||[]
+    });
+  });
+  return out;
 }
 
 const STORAGE_KEY = 'vakantie-planner-state';
@@ -389,19 +467,23 @@ function writeLocalCache(){
 
 async function loadState(){
   if(!REMOTE_ENABLED){
-    state = readLocalCache() || defaultState();
+    state = migrateState(readLocalCache()) || defaultState();
+    ensureCurrentTrip();
     return;
   }
   const key = localStorage.getItem(ACCESS_KEY_STORAGE);
   const remote = await rpc('planner_load', {access_key:key});
   if(remote){
-    state = remote;
+    const needsMigration = !remote.trips;
+    state = migrateState(remote);
     writeLocalCache();
+    if(needsMigration) await rpc('planner_save', {access_key:key, payload:state});
   } else {
     // Database is nog leeg: neem wat er lokaal staat mee als startpunt.
-    state = readLocalCache() || defaultState();
+    state = migrateState(readLocalCache()) || defaultState();
     await rpc('planner_save', {access_key:key, payload:state});
   }
+  ensureCurrentTrip();
 }
 
 let saveTimer = null;
@@ -428,7 +510,7 @@ function exportBackup(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `vakantieplanner-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `vakantieplanner-backup-${fmtISO(new Date())}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -440,8 +522,9 @@ function importBackup(input){
   reader.onload = (e)=>{
     try{
       const parsed = JSON.parse(e.target.result);
-      if(!parsed.greece || !parsed.france) throw new Error('Onherkenbaar formaat');
-      state = parsed;
+      if(!parsed.trips && !parsed.greece && !parsed.france) throw new Error('Onherkenbaar formaat');
+      state = migrateState(parsed);
+      ensureCurrentTrip();
       persist();
       renderAll();
       alert('Back-up geladen.');
@@ -460,41 +543,53 @@ function flashSaved(){
   flashSaved._t = setTimeout(()=>n.classList.remove('show'), 900);
 }
 
-function applyTheme(trip){
-  const t = THEMES[trip];
-  const root = document.documentElement;
-  document.querySelectorAll('.panel').forEach(p=>p.style.setProperty('--accent-color', getComputedStyle(root).getPropertyValue(t.accent)));
-  document.getElementById('board').style.setProperty('--accent-color', getComputedStyle(root).getPropertyValue(t.accent));
-}
-
-function switchTrip(trip){
-  currentTrip = trip;
-  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active', el.dataset.trip===trip));
+function switchTrip(id){
+  currentTripId = id;
   renderAll();
 }
 
-function updateTripMeta(){
-  const trip = state[currentTrip];
-  trip.startDate = document.getElementById('startDateInput').value || trip.startDate;
-  trip.duration = Math.max(1, parseInt(document.getElementById('durationInput').value)||trip.duration);
-  trip.transport = document.getElementById('transportInput').value;
-  persist();
-  renderBoard();
+function renderTabs(){
+  const wrap = document.getElementById('tabs');
+  wrap.innerHTML = '';
+  state.trips.forEach(t=>{
+    const pal = tripPalette(t);
+    const el = document.createElement('div');
+    el.className = 'tab' + (t.id===currentTripId?' active':'');
+    el.style.setProperty('--tab-deep', pal.deep);
+    el.onclick = ()=>switchTrip(t.id);
+    el.innerHTML = `<span class="stamp">${escapeHtml(t.emoji||'🌍')}</span> ${escapeHtml(t.name)}`;
+    wrap.appendChild(el);
+  });
+  const add = document.createElement('button');
+  add.className = 'tab-add';
+  add.textContent = '+ Nieuwe vakantie';
+  add.onclick = ()=>openTripModal(null);
+  wrap.appendChild(add);
 }
 
 function renderAll(){
-  const trip = state[currentTrip];
-  document.getElementById('startDateInput').value = trip.startDate;
-  document.getElementById('durationInput').value = trip.duration;
-  document.getElementById('transportInput').value = trip.transport;
+  renderTabs();
+  const trip = getTrip();
+  const settingsBtn = document.getElementById('tripSettingsBtn');
+  if(!trip){
+    document.getElementById('tripSummary').textContent = 'Nog geen vakanties — voeg er een toe.';
+    settingsBtn.style.display = 'none';
+    document.getElementById('packingList').innerHTML = '';
+    document.getElementById('prepList').innerHTML = '';
+    document.getElementById('board').innerHTML = '';
+    return;
+  }
+  settingsBtn.style.display = '';
+  const pal = tripPalette(trip);
+  document.getElementById('packingPanel').style.setProperty('--accent-color', pal.accent);
+  document.getElementById('prepPanel').style.setProperty('--accent-color', pal.accent);
+  const board = document.getElementById('board');
+  board.style.setProperty('--accent-color', pal.accent);
+  board.style.setProperty('--wash-color', pal.wash);
 
-  const accentVar = currentTrip==='greece' ? '--gr-accent' : '--fr-accent';
-  const washVar = currentTrip==='greece' ? '--gr-wash' : '--fr-wash';
-  const root = getComputedStyle(document.documentElement);
-  document.getElementById('packingPanel').style.setProperty('--accent-color', root.getPropertyValue(accentVar));
-  document.getElementById('prepPanel').style.setProperty('--accent-color', root.getPropertyValue(accentVar));
-  document.getElementById('board').style.setProperty('--accent-color', root.getPropertyValue(accentVar));
-  document.getElementById('board').style.setProperty('--wash-color', root.getPropertyValue(washVar));
+  const days = tripDays(trip);
+  document.getElementById('tripSummary').textContent =
+    `${fmtDate(trip.startDate,0)} – ${fmtDate(trip.startDate,days-1)} · ${days} ${days===1?'dag':'dagen'} · ${trip.transport}`;
 
   renderChecklist('packingList', trip.packing, 'packing');
   renderChecklist('prepList', trip.prep, 'prep');
@@ -517,30 +612,33 @@ function renderChecklist(ulId, arr, kind){
 }
 
 function toggleChecklist(kind, id){
-  const arr = state[currentTrip][kind];
+  const arr = getTrip()[kind];
   const it = arr.find(x=>x.id===id);
   if(it){ it.done = !it.done; persist(); renderChecklist(kind==='packing'?'packingList':'prepList', arr, kind); }
 }
 function removeChecklist(kind, id){
-  state[currentTrip][kind] = state[currentTrip][kind].filter(x=>x.id!==id);
+  const trip = getTrip();
+  trip[kind] = trip[kind].filter(x=>x.id!==id);
   persist();
-  renderChecklist(kind==='packing'?'packingList':'prepList', state[currentTrip][kind], kind);
+  renderChecklist(kind==='packing'?'packingList':'prepList', trip[kind], kind);
 }
 function addPacking(){
+  const trip = getTrip();
   const inp = document.getElementById('packingInput');
-  if(!inp.value.trim()) return;
-  state[currentTrip].packing.push({id:uid(), text:inp.value.trim(), done:false});
+  if(!trip || !inp.value.trim()) return;
+  trip.packing.push({id:uid(), text:inp.value.trim(), done:false});
   inp.value='';
   persist();
-  renderChecklist('packingList', state[currentTrip].packing, 'packing');
+  renderChecklist('packingList', trip.packing, 'packing');
 }
 function addPrep(){
+  const trip = getTrip();
   const inp = document.getElementById('prepInput');
-  if(!inp.value.trim()) return;
-  state[currentTrip].prep.push({id:uid(), text:inp.value.trim(), done:false});
+  if(!trip || !inp.value.trim()) return;
+  trip.prep.push({id:uid(), text:inp.value.trim(), done:false});
   inp.value='';
   persist();
-  renderChecklist('prepList', state[currentTrip].prep, 'prep');
+  renderChecklist('prepList', trip.prep, 'prep');
 }
 
 function fmtDate(startDate, dayOffset){
@@ -550,14 +648,16 @@ function fmtDate(startDate, dayOffset){
 }
 
 function renderBoard(){
-  const trip = state[currentTrip];
+  const trip = getTrip();
   const board = document.getElementById('board');
   board.innerHTML = '';
+  if(!trip) return;
 
   // unscheduled column first
   board.appendChild(makeColumn('unscheduled', 'Nog te plannen', null, trip));
 
-  for(let d=0; d<trip.duration; d++){
+  const days = tripDays(trip);
+  for(let d=0; d<days; d++){
     board.appendChild(makeColumn('day'+d, fmtDate(trip.startDate,d), d, trip));
   }
 }
@@ -601,6 +701,20 @@ function makeColumn(key, label, dayIndex, trip){
   return col;
 }
 
+function locationLinksHtml(it){
+  const loc = (it.location||'').trim();
+  if(!loc) return '';
+  if(/^(https?:\/\/|www\.)/i.test(loc)){
+    const url = /^https?:\/\//i.test(loc) ? loc : 'https://'+loc;
+    return `<div class="card-loc"><a href="${escapeAttr(url)}" target="_blank" rel="noopener">🔗 open link</a></div>`;
+  }
+  const q = encodeURIComponent(loc);
+  return `<div class="card-loc">
+    <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">📍 kaart</a>
+    <a href="https://www.google.com/maps/dir/?api=1&destination=${q}" target="_blank" rel="noopener">🧭 route</a>
+  </div>`;
+}
+
 function makeCard(it){
   const card = document.createElement('div');
   card.className = 'card' + (it.locked?' locked':'') + (it.done?' done':'');
@@ -612,6 +726,7 @@ function makeCard(it){
       <span class="card-title">${escapeHtml(it.title)}</span>
       ${it.locked?'<span class="pin" title="Vastgezet op deze datum">📌</span>':''}
     </div>
+    ${locationLinksHtml(it)}
     <div class="card-controls">
       <button onclick="toggleItemDone('${it.id}')">${it.done?'↺ heropen':'✓ gedaan'}</button>
       <button onclick="toggleLock('${it.id}')">${it.locked?'🔓 losmaken':'🔒 vastzetten'}</button>
@@ -623,7 +738,7 @@ function makeCard(it){
 }
 
 function moveItem(itemId, dayIndex){
-  const trip = state[currentTrip];
+  const trip = getTrip();
   const it = trip.items.find(x=>x.id===itemId);
   if(!it) return;
   if(it.locked){
@@ -636,35 +751,39 @@ function moveItem(itemId, dayIndex){
 }
 
 function toggleItemDone(id){
-  const it = state[currentTrip].items.find(x=>x.id===id);
+  const it = getTrip().items.find(x=>x.id===id);
   if(it){ it.done = !it.done; persist(); renderBoard(); }
 }
 function toggleLock(id){
-  const it = state[currentTrip].items.find(x=>x.id===id);
+  const it = getTrip().items.find(x=>x.id===id);
   if(it){ it.locked = !it.locked; persist(); renderBoard(); }
 }
 function deleteItem(id){
-  state[currentTrip].items = state[currentTrip].items.filter(x=>x.id!==id);
+  const trip = getTrip();
+  trip.items = trip.items.filter(x=>x.id!==id);
   persist();
   renderBoard();
 }
 function editItem(id){
-  const it = state[currentTrip].items.find(x=>x.id===id);
+  const it = getTrip().items.find(x=>x.id===id);
   if(!it) return;
   editingItemId = id;
   openItemModal(it);
 }
 
 function openItemModal(existing){
+  const trip = getTrip();
+  if(!trip) return;
   document.getElementById('modalTitle').textContent = existing ? 'Item bewerken' : 'Nieuw item';
   document.getElementById('itemTitleInput').value = existing ? existing.title : '';
   document.getElementById('itemCategoryInput').value = existing ? existing.category : '🎯';
+  document.getElementById('itemLocationInput').value = existing ? (existing.location||'') : '';
   document.getElementById('itemLockedInput').checked = existing ? !!existing.locked : false;
 
   const daySelect = document.getElementById('itemDayInput');
   daySelect.innerHTML = '<option value="none">Nog te plannen</option>';
-  const trip = state[currentTrip];
-  for(let d=0; d<trip.duration; d++){
+  const days = tripDays(trip);
+  for(let d=0; d<days; d++){
     const opt = document.createElement('option');
     opt.value = d;
     opt.textContent = `Dag ${d+1} — ${fmtDate(trip.startDate,d)}`;
@@ -685,22 +804,89 @@ function saveItem(){
   const category = document.getElementById('itemCategoryInput').value;
   const dayVal = document.getElementById('itemDayInput').value;
   const day = dayVal==='none' ? null : parseInt(dayVal);
+  const location = document.getElementById('itemLocationInput').value.trim();
   const locked = document.getElementById('itemLockedInput').checked;
 
   if(editingItemId){
-    const it = state[currentTrip].items.find(x=>x.id===editingItemId);
-    Object.assign(it, {title, category, day, locked});
+    const it = getTrip().items.find(x=>x.id===editingItemId);
+    Object.assign(it, {title, category, day, location, locked});
   } else {
-    state[currentTrip].items.push({id:uid(), title, category, day, locked, done:false});
+    getTrip().items.push({id:uid(), title, category, day, location, locked, done:false});
   }
   persist();
   closeItemModal();
   renderBoard();
 }
 
+/* ---- vakantie beheren ---- */
+function openTripModal(tripId){
+  editingTripId = tripId || null;
+  deleteArmed = false;
+  const trip = editingTripId ? state.trips.find(t=>t.id===editingTripId) : null;
+  document.getElementById('tripModalTitle').textContent = trip ? 'Vakantie bewerken' : 'Nieuwe vakantie';
+  document.getElementById('tripNameInput').value = trip ? trip.name : '';
+  document.getElementById('tripEmojiInput').value = trip ? (trip.emoji||'') : '';
+  document.getElementById('tripTransportInput').value = trip ? trip.transport : '✈️ Vliegtuig';
+  document.getElementById('tripStartInput').value = trip ? trip.startDate : nextMonday();
+  document.getElementById('tripEndInput').value = trip ? trip.endDate : addDays(nextMonday(),6);
+  document.getElementById('tripModalError').textContent = '';
+  const del = document.getElementById('tripDeleteBtn');
+  del.style.display = trip ? '' : 'none';
+  del.textContent = 'Verwijderen';
+  document.getElementById('tripModalBackdrop').classList.add('open');
+}
+function closeTripModal(){
+  document.getElementById('tripModalBackdrop').classList.remove('open');
+  editingTripId = null;
+  deleteArmed = false;
+}
+function saveTrip(){
+  const name = document.getElementById('tripNameInput').value.trim();
+  const emoji = document.getElementById('tripEmojiInput').value.trim();
+  const transport = document.getElementById('tripTransportInput').value;
+  const startDate = document.getElementById('tripStartInput').value;
+  const endDate = document.getElementById('tripEndInput').value;
+  const err = document.getElementById('tripModalError');
+  if(!name){ err.textContent = 'Geef de vakantie een naam.'; return; }
+  if(!startDate || !endDate){ err.textContent = 'Vul start- en einddatum in.'; return; }
+  if(endDate < startDate){ err.textContent = 'De einddatum ligt vóór de startdatum.'; return; }
+
+  let trip = editingTripId ? state.trips.find(t=>t.id===editingTripId) : null;
+  if(trip){
+    Object.assign(trip, {name, emoji, transport, startDate, endDate});
+  } else {
+    trip = {id:uid(), name, emoji, transport, startDate, endDate, packing:[], prep:[], items:[]};
+    state.trips.push(trip);
+    currentTripId = trip.id;
+  }
+  // Activiteiten die buiten de (nieuwe) periode vallen, terug naar "nog te plannen".
+  const days = tripDays(trip);
+  trip.items.forEach(it=>{
+    if(it.day!==null && it.day!==undefined && it.day>=days) it.day = null;
+  });
+  persist();
+  closeTripModal();
+  renderAll();
+}
+function deleteTrip(){
+  const btn = document.getElementById('tripDeleteBtn');
+  if(!deleteArmed){
+    deleteArmed = true;
+    btn.textContent = 'Zeker? Klik nogmaals';
+    return;
+  }
+  state.trips = state.trips.filter(t=>t.id!==editingTripId);
+  if(currentTripId===editingTripId) currentTripId = state.trips[0] ? state.trips[0].id : null;
+  persist();
+  closeTripModal();
+  renderAll();
+}
+
 function shareStatus(){
-  const trip = state[currentTrip];
-  const tripLabel = currentTrip==='greece' ? 'Griekenland 🇬🇷' : 'Zuid-Frankrijk 🇫🇷';
+  const trip = getTrip();
+  if(!trip) return;
+  const tripLabel = `${trip.name} ${trip.emoji||''}`.trim();
+  const days = tripDays(trip);
   const today = new Date(); today.setHours(0,0,0,0);
   const start = new Date(trip.startDate+'T00:00:00');
   const diffDays = Math.round((today-start)/86400000);
@@ -710,7 +896,7 @@ function shareStatus(){
   lines.push(`(${new Date().toLocaleDateString('nl-BE',{day:'numeric',month:'long'})})`);
   lines.push('');
 
-  if(diffDays>=0 && diffDays<trip.duration){
+  if(diffDays>=0 && diffDays<days){
     lines.push(`📍 Vandaag — Dag ${diffDays+1} (${fmtDate(trip.startDate,diffDays)}):`);
     const todayItems = trip.items.filter(it=>it.day===diffDays);
     if(todayItems.length===0){
@@ -719,7 +905,7 @@ function shareStatus(){
       todayItems.forEach(it=>lines.push(`  ${it.done?'✅':'⬜'} ${it.category||''} ${it.title}${it.locked?' 📌':''}`));
     }
     lines.push('');
-    if(diffDays+1<trip.duration){
+    if(diffDays+1<days){
       lines.push(`🗓️ Morgen (${fmtDate(trip.startDate,diffDays+1)}):`);
       const tmrw = trip.items.filter(it=>it.day===diffDays+1);
       if(tmrw.length===0) lines.push('  (nog niets gepland)');
@@ -774,7 +960,11 @@ function escapeHtml(str){
   d.textContent = str;
   return d.innerHTML;
 }
+function escapeAttr(str){
+  return escapeHtml(str).replace(/"/g,'&quot;');
+}
 
+/* ---- toegangsscherm ---- */
 function openGate(msg){
   document.getElementById('gateError').textContent = msg || '';
   document.getElementById('gateBackdrop').classList.add('open');
