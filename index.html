@@ -77,6 +77,13 @@
     background:white; border:1px solid var(--line); border-radius:14px; padding:18px;
   }
   section.panel h3{font-size:15px; margin:0 0 12px; display:flex; align-items:center; gap:8px;}
+  .panel-import{
+    margin-left:auto; border:none; background:none; cursor:pointer; font-size:15px;
+    padding:2px 4px; opacity:.65; line-height:1; font-family:'Inter';
+  }
+  @media (hover:hover){
+    .panel-import:hover{opacity:1;}
+  }
   .panel-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
   .panel-item{
     display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
@@ -251,7 +258,7 @@
 <main>
   <div class="sidebar">
     <section class="panel" id="packingPanel">
-      <h3>🧳 Inpaklijst</h3>
+      <h3>🧳 Inpaklijst <button class="panel-import" onclick="openCopyModal('packing')" title="Overnemen van een andere vakantie">📥</button></h3>
       <ul class="panel-list" id="packingList"></ul>
       <div class="mini-add">
         <input type="text" id="packingInput" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addPacking()">
@@ -260,7 +267,7 @@
     </section>
 
     <section class="panel" id="prepPanel">
-      <h3>✅ Voor te bereiden</h3>
+      <h3>✅ Voor te bereiden <button class="panel-import" onclick="openCopyModal('prep')" title="Overnemen van een andere vakantie">📥</button></h3>
       <ul class="panel-list" id="prepList"></ul>
       <div class="mini-add">
         <input type="text" id="prepInput" placeholder="To-do toevoegen…" onkeydown="if(event.key==='Enter')addPrep()">
@@ -364,11 +371,30 @@
         <input type="date" id="tripEndInput">
       </div>
     </div>
+    <div id="tripCopyRow">
+      <label>Inpak- &amp; voorbereidingslijst overnemen van (optioneel)</label>
+      <select id="tripCopyInput"></select>
+    </div>
     <div class="gate-error" id="tripModalError"></div>
     <div class="modal-actions">
       <button class="btn-danger" id="tripDeleteBtn" onclick="deleteTrip()">Verwijderen</button>
       <button class="btn-ghost" onclick="closeTripModal()">Annuleren</button>
       <button class="btn-primary" onclick="saveTrip()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="copyModalBackdrop">
+  <div class="modal">
+    <h3 id="copyModalTitle">Lijst overnemen</h3>
+    <p style="font-size:13px; color:#6b6459; margin:0;">Kies een vakantie om de items van over te nemen. Bestaande items blijven staan; dubbels worden overgeslagen.</p>
+    <div>
+      <label>Overnemen van</label>
+      <select id="copyFromTripInput"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeCopyModal()">Annuleren</button>
+      <button class="btn-primary" onclick="confirmCopyList()">Overnemen</button>
     </div>
   </div>
 </div>
@@ -1029,6 +1055,26 @@ function openTripModal(tripId){
   document.getElementById('tripStartInput').value = trip ? trip.startDate : nextMonday();
   document.getElementById('tripEndInput').value = trip ? trip.endDate : addDays(nextMonday(),6);
   document.getElementById('tripModalError').textContent = '';
+
+  // Bij een nieuwe vakantie: aanbieden om de lijsten van een bestaande
+  // vakantie over te nemen, zodat je niet telkens van nul begint.
+  const copyRow = document.getElementById('tripCopyRow');
+  const copySel = document.getElementById('tripCopyInput');
+  const others = state.trips.filter(t => t.id !== (trip ? trip.id : null));
+  if(!trip && others.length){
+    copyRow.style.display = '';
+    copySel.innerHTML = '<option value="">— Niets overnemen —</option>';
+    others.forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.emoji||'🌍'} ${t.name}`.trim();
+      copySel.appendChild(opt);
+    });
+  } else {
+    copyRow.style.display = 'none';
+    copySel.innerHTML = '';
+  }
+
   const del = document.getElementById('tripDeleteBtn');
   del.style.display = trip ? '' : 'none';
   del.textContent = 'Verwijderen';
@@ -1055,6 +1101,13 @@ function saveTrip(){
     Object.assign(trip, {name, emoji, transport, startDate, endDate});
   } else {
     trip = {id:uid(), name, emoji, transport, startDate, endDate, packing:[], prep:[], items:[]};
+    // Lijsten overnemen van een gekozen vakantie (afvinkstatus resetten).
+    const copyFromId = document.getElementById('tripCopyInput').value;
+    const src = copyFromId ? state.trips.find(t=>t.id===copyFromId) : null;
+    if(src){
+      trip.packing = (src.packing||[]).map(p=>({id:uid(), text:p.text, done:false}));
+      trip.prep = (src.prep||[]).map(p=>({id:uid(), text:p.text, done:false}));
+    }
     state.trips.push(trip);
     currentTripId = trip.id;
   }
@@ -1078,6 +1131,49 @@ function deleteTrip(){
   if(currentTripId===editingTripId) currentTripId = state.trips[0] ? state.trips[0].id : null;
   persist();
   closeTripModal();
+  renderAll();
+}
+
+/* ---- lijst overnemen van een andere vakantie ---- */
+let copyKind = null;
+function openCopyModal(kind){
+  const trip = getTrip();
+  if(!trip) return;
+  const others = state.trips.filter(t=>t.id!==trip.id);
+  if(others.length===0){
+    alert('Er is nog geen andere vakantie om lijsten van over te nemen.');
+    return;
+  }
+  copyKind = kind;
+  document.getElementById('copyModalTitle').textContent =
+    kind==='packing' ? '🧳 Inpaklijst overnemen' : '✅ Voorbereiding overnemen';
+  const sel = document.getElementById('copyFromTripInput');
+  sel.innerHTML = '';
+  others.forEach(t=>{
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = `${t.emoji||'🌍'} ${t.name}`.trim();
+    sel.appendChild(opt);
+  });
+  document.getElementById('copyModalBackdrop').classList.add('open');
+}
+function closeCopyModal(){
+  document.getElementById('copyModalBackdrop').classList.remove('open');
+  copyKind = null;
+}
+function confirmCopyList(){
+  const trip = getTrip();
+  const from = state.trips.find(t=>t.id===document.getElementById('copyFromTripInput').value);
+  if(!trip || !from || !copyKind) return;
+  const existing = new Set(trip[copyKind].map(x=>x.text.trim().toLowerCase()));
+  (from[copyKind]||[]).forEach(it=>{
+    const key = it.text.trim().toLowerCase();
+    if(existing.has(key)) return;
+    existing.add(key);
+    trip[copyKind].push({id:uid(), text:it.text, done:false});
+  });
+  persist();
+  closeCopyModal();
   renderAll();
 }
 
