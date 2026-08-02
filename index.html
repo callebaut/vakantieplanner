@@ -84,6 +84,16 @@
   @media (hover:hover){
     .panel-import:hover{opacity:1;}
   }
+  section.panel h3{cursor:pointer; user-select:none;}
+  .panel-toggle{font-size:11px; color:#a89f92; flex:none; width:12px;}
+  .panel-count{font-size:12px; font-weight:600; color:#a89f92;}
+  /* volledig ingeklapt paneel: enkel de titel blijft zichtbaar */
+  section.panel.collapsed{padding-bottom:14px;}
+  section.panel.collapsed h3{margin-bottom:0;}
+  section.panel.collapsed .panel-list,
+  section.panel.collapsed .left-out,
+  section.panel.collapsed .mini-add,
+  section.panel.collapsed .add-opts{display:none;}
   .panel-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
   .panel-item{
     display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
@@ -322,7 +332,7 @@
 <main>
   <div class="sidebar">
     <section class="panel" id="packingPanel">
-      <h3>🧳 Inpaklijst <button class="panel-import" onclick="openImportModal('packing')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
+      <h3 onclick="onPanelHeaderClick(event,'packing')"><span class="panel-toggle" id="packingToggle">▾</span> 🧳 Inpaklijst <span class="panel-count" id="packingCount"></span><button class="panel-import" onclick="openImportModal('packing')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
       <ul class="panel-list" id="packingList"></ul>
       <div class="left-out" id="packingLeftOut"></div>
       <div class="mini-add">
@@ -347,7 +357,7 @@
     </section>
 
     <section class="panel" id="prepPanel">
-      <h3>✅ Voor te bereiden <button class="panel-import" onclick="openImportModal('prep')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
+      <h3 onclick="onPanelHeaderClick(event,'prep')"><span class="panel-toggle" id="prepToggle">▾</span> ✅ Voor te bereiden <span class="panel-count" id="prepCount"></span><button class="panel-import" onclick="openImportModal('prep')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
       <ul class="panel-list" id="prepList"></ul>
       <div class="left-out" id="prepLeftOut"></div>
       <div class="mini-add">
@@ -1068,6 +1078,7 @@ function renderFlatChecklist(kind){
   }
   renderLeftOut(kind);
   focusEdit(kind, ul);
+  applyPanelCollapse(kind);
 }
 
 // Gegroepeerde weergave (inpaklijst): inklapbare categorie-secties.
@@ -1099,10 +1110,40 @@ function renderGroupedChecklist(){
   ul.innerHTML = html || '<li class="empty-hint">Nog geen items — voeg er hieronder toe of importeer een lijst.</li>';
   renderLeftOut(kind);
   focusEdit(kind, ul);
+  applyPanelCollapse(kind);
 }
 function toggleCat(key){
   collapsedCats[key] = !collapsedCats[key];
   renderChecklist('packing');
+}
+
+// Volledig in-/uitklappen van een heel paneel (inpaklijst / voorbereiding).
+// De keuze wordt per vakantie onthouden en meegesynct.
+function onPanelHeaderClick(e, kind){
+  if(e.target.closest('.panel-import')) return; // knoppen niet als toggle
+  togglePanel(kind);
+}
+function togglePanel(kind){
+  const trip = getTrip();
+  if(!trip) return;
+  trip.collapsed = trip.collapsed || {};
+  trip.collapsed[kind] = !trip.collapsed[kind];
+  persist();
+  applyPanelCollapse(kind);
+}
+function applyPanelCollapse(kind){
+  const trip = getTrip();
+  if(!trip) return;
+  const isC = !!(trip.collapsed && trip.collapsed[kind]);
+  const panel = document.getElementById(kind==='packing' ? 'packingPanel' : 'prepPanel');
+  panel.classList.toggle('collapsed', isC);
+  const caret = document.getElementById(kind==='packing' ? 'packingToggle' : 'prepToggle');
+  if(caret) caret.textContent = isC ? '▸' : '▾';
+  const {general, extras} = effectiveList(trip, kind);
+  const items = general.concat(extras);
+  const done = items.filter(x=>x.done).length;
+  const cnt = document.getElementById(kind==='packing' ? 'packingCount' : 'prepCount');
+  if(cnt) cnt.textContent = items.length ? `${done}/${items.length}` : '';
 }
 
 function startRename(kind, id, general){
