@@ -89,8 +89,12 @@
     display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
   }
   .panel-item input[type=checkbox]{accent-color:var(--accent-color, var(--gr-accent)); width:16px; height:16px; flex:none;}
-  .panel-item .pi-text{min-width:0; overflow-wrap:anywhere;}
+  .panel-item .pi-text{min-width:0; overflow-wrap:anywhere; cursor:text;}
   .panel-item.done .pi-text{text-decoration:line-through; color:#b0a89b;}
+  .pi-edit{
+    flex:1; min-width:0; border:1px solid var(--accent-color, var(--gr-accent));
+    border-radius:6px; padding:4px 7px; font-size:13px; font-family:'Inter';
+  }
   .tag-general{
     font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
     color:#9a9284; border:1px solid var(--line); border-radius:999px; padding:1px 6px;
@@ -282,7 +286,7 @@
 <main>
   <div class="sidebar">
     <section class="panel" id="packingPanel">
-      <h3>🧳 Inpaklijst <button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
+      <h3>🧳 Inpaklijst <button class="panel-import" onclick="openImportModal('packing')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
       <ul class="panel-list" id="packingList"></ul>
       <div class="left-out" id="packingLeftOut"></div>
       <div class="mini-add">
@@ -293,7 +297,7 @@
     </section>
 
     <section class="panel" id="prepPanel">
-      <h3>✅ Voor te bereiden <button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
+      <h3>✅ Voor te bereiden <button class="panel-import" onclick="openImportModal('prep')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
       <ul class="panel-list" id="prepList"></ul>
       <div class="left-out" id="prepLeftOut"></div>
       <div class="mini-add">
@@ -423,6 +427,26 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="importModalBackdrop">
+  <div class="modal">
+    <h3 id="importModalTitle">Lijst importeren</h3>
+    <p style="font-size:13px; color:#6b6459; margin:0;">Plak je lijst (bv. uit een TODO-app). Vinkjes worden genegeerd, een titelregel zonder bolletje wordt overgeslagen en dubbels worden samengevoegd.</p>
+    <textarea id="importInput" rows="8" placeholder="Vakantie&#10;◯ Babyfoon&#10;◯ Modem&#10;✔ Paspoort&#10;…"></textarea>
+    <div>
+      <label>Toevoegen aan</label>
+      <select id="importScope">
+        <option value="trip">Deze vakantie</option>
+        <option value="general">Algemeen (alle vakanties)</option>
+      </select>
+    </div>
+    <div class="gate-error" id="importError"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeImportModal()">Annuleren</button>
+      <button class="btn-primary" onclick="confirmImport()">Importeren</button>
+    </div>
+  </div>
+</div>
+
 <div class="gate-backdrop" id="gateBackdrop">
   <div class="gate">
     <h2 class="display">Vakantieplanner</h2>
@@ -455,6 +479,9 @@ let deleteArmed = false;
 // "lees meer"-knop, zodat je vlot naar de dagindeling kan scrollen.
 const CHECKLIST_COLLAPSE_LIMIT = 5;
 let expandedLists = {packing:false, prep:false};
+// Welk item wordt momenteel hernoemd (inline invoerveld).
+let editingChecklist = null;   // {kind, id, general}
+let editingTemplateId = null;  // id in de algemene-lijst-modal
 
 function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
 
@@ -872,12 +899,19 @@ function renderChecklist(kind){
   visible.forEach(it=>{
     const li = document.createElement('li');
     li.className = 'panel-item' + (it.done?' done':'');
+    const editing = editingChecklist && editingChecklist.kind===kind
+      && editingChecklist.id===it.id && editingChecklist.general===it.general;
     const delBtn = it.general
       ? `<button class="del" title="Weglaten voor deze vakantie" onclick="removeChecklist('${kind}','${it.id}',true)">✕</button>`
       : `<button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}',false)">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>`;
+    const textEl = editing
+      ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
+           onkeydown="onRenameKey(event,'${kind}','${it.id}',${it.general})"
+           onblur="commitRename('${kind}','${it.id}',${it.general},this.value)">`
+      : `<span class="pi-text" title="Klik om te hernoemen" onclick="startRename('${kind}','${it.id}',${it.general})">${escapeHtml(it.text)}</span>`;
     li.innerHTML = `
       <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}',${it.general})">
-      <span class="pi-text">${escapeHtml(it.text)}</span>
+      ${textEl}
       ${it.general ? '<span class="tag-general" title="Staat op elke vakantie">algemeen</span>' : ''}
       ${delBtn}
     `;
@@ -911,6 +945,36 @@ function renderChecklist(kind){
       area.appendChild(chip);
     });
   }
+
+  // Focus het inline bewerk-veld zodra het getoond wordt.
+  if(editingChecklist && editingChecklist.kind===kind){
+    const inp = ul.querySelector('.pi-edit');
+    if(inp){ inp.focus(); inp.select(); }
+  }
+}
+
+function startRename(kind, id, general){
+  editingChecklist = {kind, id, general: !!general};
+  renderChecklist(kind);
+}
+function onRenameKey(e, kind, id, general){
+  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==='Escape'){ editingChecklist = null; renderChecklist(kind); }
+}
+function commitRename(kind, id, general, value){
+  if(!editingChecklist) return; // al afgehandeld (bv. Escape)
+  editingChecklist = null;
+  const text = (value||'').trim();
+  if(text){
+    if(general){
+      const ti = (state.template[kind]||[]).find(x=>x.id===id);
+      if(ti && ti.text!==text){ ti.text = text; persist(); }
+    } else {
+      const it = getTrip()[kind].find(x=>x.id===id);
+      if(it && it.text!==text){ it.text = text; persist(); }
+    }
+  }
+  renderChecklist(kind);
 }
 
 function toggleChecklist(kind, id, general){
@@ -1290,6 +1354,7 @@ function openTemplateModal(kind){
 function closeTemplateModal(){
   document.getElementById('tmplModalBackdrop').classList.remove('open');
   tmplKind = null;
+  editingTemplateId = null;
   renderAll();
 }
 function renderTemplateList(){
@@ -1306,12 +1371,37 @@ function renderTemplateList(){
   arr.forEach(it=>{
     const li = document.createElement('li');
     li.className = 'panel-item';
+    const textEl = editingTemplateId===it.id
+      ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
+           onkeydown="onTemplateRenameKey(event,'${it.id}')"
+           onblur="commitTemplateRename('${it.id}',this.value)">`
+      : `<span class="pi-text" style="flex:1;" title="Klik om te hernoemen" onclick="startTemplateRename('${it.id}')">${escapeHtml(it.text)}</span>`;
     li.innerHTML = `
-      <span class="pi-text" style="flex:1;">${escapeHtml(it.text)}</span>
+      ${textEl}
       <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeTemplateItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
     `;
     ul.appendChild(li);
   });
+  if(editingTemplateId){
+    const inp = ul.querySelector('.pi-edit');
+    if(inp){ inp.focus(); inp.select(); }
+  }
+}
+function startTemplateRename(id){
+  editingTemplateId = id;
+  renderTemplateList();
+}
+function onTemplateRenameKey(e, id){
+  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==='Escape'){ editingTemplateId = null; renderTemplateList(); }
+}
+function commitTemplateRename(id, value){
+  if(editingTemplateId!==id) return;
+  editingTemplateId = null;
+  const text = (value||'').trim();
+  const ti = (state.template[tmplKind]||[]).find(x=>x.id===id);
+  if(ti && text && ti.text!==text){ ti.text = text; persist(); }
+  renderTemplateList();
 }
 function addTemplateItem(){
   const inp = document.getElementById('tmplInput');
@@ -1333,6 +1423,88 @@ function removeTemplateItem(id){
   });
   persist();
   renderTemplateList();
+}
+
+/* ---- lijst importeren (bv. uit een TODO-app) ---- */
+// Bolletjes/vinkjes en opsommingstekens vooraan een regel.
+const IMPORT_MARKERS = ['◯','○','◌','●','◉','⦿','✔','✓','☑','✅','⬜','⬛','▢','□','■','▪','•','◦','‣','·','*','-','–','—'];
+function stripMarker(line){
+  let s = line.trim();
+  s = s.replace(/^\[[ xX]?\]\s*/, '');            // [ ] of [x]
+  while(s.length && IMPORT_MARKERS.includes(s[0])) s = s.slice(1).trim();
+  return s.trim();
+}
+function hasMarker(line){
+  const s = line.trim();
+  if(!s) return false;
+  return /^\[[ xX]?\]/.test(s) || IMPORT_MARKERS.includes(s[0]);
+}
+// Parse naar een ontdubbelde lijst met item-teksten; vinkstatus wordt genegeerd.
+function parseImport(text){
+  const rows = text.split(/\r?\n/).filter(l=>l.trim().length);
+  const anyMarker = rows.some(hasMarker);
+  const picked = anyMarker ? rows.filter(hasMarker) : rows;
+  const seen = new Set();
+  const out = [];
+  picked.forEach(l=>{
+    const t = anyMarker ? stripMarker(l) : l.trim();
+    if(!t) return;
+    const key = t.toLowerCase();
+    if(seen.has(key)) return;
+    seen.add(key);
+    out.push(t);
+  });
+  return out;
+}
+
+let importKind = null;
+function openImportModal(kind){
+  const trip = getTrip();
+  if(!trip){ alert('Maak eerst een vakantie aan.'); return; }
+  importKind = kind;
+  document.getElementById('importModalTitle').textContent =
+    kind==='packing' ? '🧳 Inpaklijst importeren' : '✅ Voorbereiding importeren';
+  document.getElementById('importInput').value = '';
+  document.getElementById('importError').textContent = '';
+  document.getElementById('importScope').value = 'trip';
+  document.getElementById('importModalBackdrop').classList.add('open');
+}
+function closeImportModal(){
+  document.getElementById('importModalBackdrop').classList.remove('open');
+  importKind = null;
+}
+function confirmImport(){
+  if(!importKind) return;
+  const err = document.getElementById('importError');
+  const items = parseImport(document.getElementById('importInput').value);
+  if(!items.length){ err.textContent = 'Geen items gevonden om te importeren.'; return; }
+  const scope = document.getElementById('importScope').value;
+  const trip = getTrip();
+  let added = 0;
+  if(scope === 'general'){
+    const existing = new Set((state.template[importKind]||[]).map(x=>x.text.trim().toLowerCase()));
+    items.forEach(t=>{
+      if(existing.has(t.toLowerCase())) return;
+      existing.add(t.toLowerCase());
+      state.template[importKind].push({id:uid(), text:t});
+      added++;
+    });
+  } else {
+    // Ontdubbelen tegenover wat al op deze vakantie staat (algemeen + eigen).
+    const eff = effectiveList(trip, importKind);
+    const existing = new Set(eff.general.concat(eff.extras).map(x=>x.text.trim().toLowerCase()));
+    items.forEach(t=>{
+      if(existing.has(t.toLowerCase())) return;
+      existing.add(t.toLowerCase());
+      trip[importKind].push({id:uid(), text:t, done:false});
+      added++;
+    });
+  }
+  expandedLists[importKind] = true;
+  persist();
+  closeImportModal();
+  renderAll();
+  flashSaved(`${added} item(s) geïmporteerd ✓`);
 }
 
 function shareStatus(){
