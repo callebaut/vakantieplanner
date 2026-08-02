@@ -355,8 +355,8 @@ const ACCESS_KEY_STORAGE = 'vakantie-planner-access-key';
 // afgedwongen door de toegangscode-check in planner_load/planner_save
 // (zie supabase-setup.sql). Zolang de placeholders niet ingevuld zijn,
 // werkt de app puur lokaal (localStorage) en is er geen toegangsscherm.
-const SUPABASE_URL = '__SUPABASE_URL__';
-const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__';
+const SUPABASE_URL = 'https://uhsrbymcgbmpsxxhblgt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_yaPmokCGiWJifM5xyLgWdA_BF-BNdIA';
 const REMOTE_ENABLED = !SUPABASE_URL.startsWith('__');
 
 async function rpc(fn, args){
