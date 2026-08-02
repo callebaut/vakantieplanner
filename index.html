@@ -197,6 +197,7 @@
     <span id="tripSummary"></span>
     <button class="meta-btn" id="tripSettingsBtn" onclick="openTripModal(currentTripId)">⚙️ Instellingen</button>
     <span style="margin-left:auto; display:flex; gap:6px;">
+      <button class="meta-btn" id="refreshBtn" onclick="refreshData()">🔄 Vernieuwen</button>
       <button class="meta-btn" onclick="exportBackup()">⬇ Exporteer back-up</button>
       <label class="meta-btn" style="display:inline-block;">
         ⬆ Importeer back-up
@@ -536,12 +537,48 @@ function importBackup(input){
   input.value = '';
 }
 
-function flashSaved(){
+function flashSaved(text){
   const n = document.getElementById('saveNote');
+  n.textContent = text || 'Opgeslagen ✓';
   n.classList.add('show');
   clearTimeout(flashSaved._t);
   flashSaved._t = setTimeout(()=>n.classList.remove('show'), 900);
 }
+
+// Haalt de laatste data van de server; een nog uitstaande (gedebouncede)
+// save wordt eerst weggeschreven zodat er niets verloren gaat.
+let refreshing = false;
+async function refreshData(){
+  if(!REMOTE_ENABLED || refreshing || !localStorage.getItem(ACCESS_KEY_STORAGE)) return;
+  refreshing = true;
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  try{
+    if(saveTimer){
+      clearTimeout(saveTimer);
+      saveTimer = null;
+      await rpc('planner_save', {access_key:localStorage.getItem(ACCESS_KEY_STORAGE), payload:state});
+    }
+    await loadState();
+    renderAll();
+    flashSaved('Vernieuwd ✓');
+  }catch(e){
+    console.error('Vernieuwen mislukt', e);
+    if(String(e.message).includes('invalid key')){
+      localStorage.removeItem(ACCESS_KEY_STORAGE);
+      openGate('Toegangscode is niet meer geldig.');
+    }
+  }finally{
+    refreshing = false;
+    btn.disabled = false;
+  }
+}
+
+// Op mobiel (app op startscherm) automatisch verversen wanneer de app
+// terug naar de voorgrond komt.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && state) refreshData();
+});
 
 function switchTrip(id){
   currentTripId = id;
