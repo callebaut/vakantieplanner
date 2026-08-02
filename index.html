@@ -203,14 +203,7 @@
   <div class="trip-meta">
     <span id="tripSummary"></span>
     <button class="meta-btn" id="tripSettingsBtn" onclick="openTripModal(currentTripId)">⚙️ Instellingen</button>
-    <span style="margin-left:auto; display:flex; gap:6px;">
-      <button class="meta-btn" id="refreshBtn" onclick="refreshData()">🔄 Vernieuwen</button>
-      <button class="meta-btn" onclick="exportBackup()">⬇ Exporteer back-up</button>
-      <label class="meta-btn" style="display:inline-block;">
-        ⬆ Importeer back-up
-        <input type="file" accept="application/json" onchange="importBackup(this)" style="display:none;">
-      </label>
-    </span>
+    <button class="meta-btn" id="refreshBtn" onclick="refreshData()" style="margin-left:auto;">🔄 Vernieuwen</button>
   </div>
 </header>
 
@@ -511,37 +504,6 @@ async function persist(){
       }
     }
   }, 600);
-}
-
-function exportBackup(){
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `vakantieplanner-backup-${fmtISO(new Date())}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importBackup(input){
-  const file = input.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (e)=>{
-    try{
-      const parsed = JSON.parse(e.target.result);
-      if(!parsed.trips && !parsed.greece && !parsed.france) throw new Error('Onherkenbaar formaat');
-      state = migrateState(parsed);
-      ensureCurrentTrip();
-      persist();
-      renderAll();
-      alert('Back-up geladen.');
-    }catch(err){
-      alert('Kon dit bestand niet inladen: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
-  input.value = '';
 }
 
 function flashSaved(text){
