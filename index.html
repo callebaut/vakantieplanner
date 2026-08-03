@@ -367,6 +367,21 @@
     body{padding-bottom:calc(70px + env(safe-area-inset-bottom));}
     main{padding-bottom:20px;}
 
+    /* Een heel paneel dichtklappen is op gsm overbodig: elke sectie staat al
+       op haar eigen scherm via de onderbalk. Verberg de inklap-pijl, maak de
+       koptekst niet-klikbaar en toon altijd de volledige inhoud (ook mocht de
+       'collapsed'-status van de desktop nog aanstaan). */
+    .panel-toggle{display:none;}
+    section.panel h3{cursor:default;}
+    section.panel.collapsed{padding-bottom:18px;}
+    section.panel.collapsed h3{margin-bottom:12px;}
+    section.panel.collapsed .panel-list{display:flex;}
+    section.panel.collapsed .mini-add{display:flex;}
+    section.panel.collapsed .add-opts{display:flex;}
+    section.panel.collapsed .add-scope{display:flex;}
+    section.panel.collapsed .left-out{display:flex;}
+    section.panel.collapsed .add-place-btn{display:block;}
+
     .bottom-nav{
       display:flex; position:fixed; left:0; right:0; bottom:0; z-index:45;
       background:var(--paper); border-top:1px solid var(--line);
@@ -1307,8 +1322,10 @@ function toggleCat(key){
 
 // Volledig in-/uitklappen van een heel paneel (inpaklijst / voorbereiding).
 // De keuze wordt per vakantie onthouden en meegesynct.
+function isMobileView(){ return window.matchMedia('(max-width:880px)').matches; }
 function onPanelHeaderClick(e, kind){
   if(e.target.closest('.panel-import')) return; // knoppen niet als toggle
+  if(isMobileView()) return;                    // op gsm geen paneel-inklap
   togglePanel(kind);
 }
 function togglePanel(kind){
@@ -1329,7 +1346,9 @@ function applyPanelCollapse(kind){
   if(!trip) return;
   const ids = PANEL_IDS[kind];
   if(!ids) return;
-  const isC = !!(trip.collapsed && trip.collapsed[kind]);
+  // Op gsm nooit inklappen (elke sectie staat al apart via de onderbalk);
+  // de bewaarde status blijft staan voor de desktopweergave.
+  const isC = !isMobileView() && !!(trip.collapsed && trip.collapsed[kind]);
   const panel = document.getElementById(ids.panel);
   panel.classList.toggle('collapsed', isC);
   const caret = document.getElementById(ids.toggle);
