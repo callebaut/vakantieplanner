@@ -94,7 +94,8 @@
   section.panel.collapsed .left-out,
   section.panel.collapsed .mini-add,
   section.panel.collapsed .add-opts,
-  section.panel.collapsed .add-scope{display:none;}
+  section.panel.collapsed .add-scope,
+  section.panel.collapsed .add-place-btn{display:none;}
   .panel-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
   .panel-item{
     display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
@@ -313,6 +314,78 @@
     border:none; background:var(--gr-accent); color:white; border-radius:8px;
     padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer;
   }
+
+  /* ---- nuttige plaatsen ---- */
+  .places-group-header{
+    display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+    padding:9px 6px 4px; margin-top:4px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:#6b6459;
+  }
+  .places-group-header:first-child{border-top:none; margin-top:0;}
+  .places-group-header .cat-caret{width:12px; font-size:10px; color:#a89f92; flex:none;}
+  .places-group-header .cat-name{flex:1; min-width:0;}
+  .places-group-header .cat-count{font-size:11px; font-weight:600; color:#a89f92; flex:none;}
+  .places-group-header.collapsed{color:#9a9284;}
+  @media (hover:hover){ .places-group-header:hover{color:var(--ink);} }
+  .place-row{
+    display:flex; gap:9px; align-items:flex-start; padding:8px; border-radius:9px; cursor:pointer;
+  }
+  @media (hover:hover){ .place-row:hover{background:var(--paper-dim);} }
+  .place-row .place-emoji{font-size:16px; line-height:1.35; flex:none;}
+  .place-body{flex:1; min-width:0;}
+  .place-name{font-size:14px; overflow-wrap:anywhere;}
+  .place-cat{font-size:11px; color:#9a9284; margin-left:6px;}
+  .place-notes{font-size:11.5px; color:#8a8175; margin-top:3px; white-space:pre-line;}
+  .place-row .card-loc{margin-top:5px;}
+  .place-row .del{
+    margin-left:auto; cursor:pointer; color:#c0392b; font-size:12px; border:none;
+    background:none; padding:4px 6px; flex:none;
+  }
+  @media (hover:hover){
+    .place-row .del{opacity:0;}
+    .place-row:hover .del, .place-row .del.armed{opacity:1;}
+  }
+  .add-place-btn{
+    border:none; background:var(--accent-color, var(--gr-accent)); color:white; border-radius:8px;
+    padding:10px 14px; font-size:13px; font-weight:600; cursor:pointer; margin-top:12px; width:100%;
+  }
+  .places-empty{font-size:12px; color:#b0a89b; text-align:center; margin:14px 0 4px;}
+  .modal select optgroup{font-style:normal; font-weight:700;}
+
+  /* ---- secties & onderbalk ---- */
+  /* Op desktop staat alles naast/onder elkaar en is de onderbalk verborgen.
+     Op gsm toont de app één sectie tegelijk; met de vaste icoontjesbalk
+     onderaan spring je meteen naar Dag / Plaatsen / Inpak / Voorbereiden. */
+  .bottom-nav{display:none;}
+  @media (max-width:880px){
+    .view{display:none !important;}
+    body[data-section="board"]   .view[data-view="board"],
+    body[data-section="packing"] .view[data-view="packing"],
+    body[data-section="prep"]    .view[data-view="prep"],
+    body[data-section="places"]  .view[data-view="places"]{display:block !important;}
+
+    body{padding-bottom:calc(70px + env(safe-area-inset-bottom));}
+    main{padding-bottom:20px;}
+
+    .bottom-nav{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:45;
+      background:var(--paper); border-top:1px solid var(--line);
+      padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+      box-shadow:0 -2px 10px rgba(0,0,0,.05);
+    }
+    .bottom-nav button{
+      position:relative; flex:1; border:none; background:none; cursor:pointer;
+      font-family:'Inter'; display:flex; flex-direction:column; align-items:center; gap:3px;
+      font-size:10.5px; font-weight:600; color:#8a8175; padding:5px 2px; border-radius:10px;
+    }
+    .bottom-nav .bn-ico{position:relative; font-size:21px; line-height:1;}
+    .bottom-nav .bn-badge{
+      position:absolute; top:-5px; left:100%; transform:translateX(-5px);
+      background:#c2503a; color:white; font-size:9px; font-weight:700; border-radius:999px;
+      padding:0 4px; line-height:14px; min-width:14px; text-align:center;
+    }
+    .bottom-nav button.active{color:var(--nav-accent, var(--gr-accent)); background:var(--paper-dim);}
+  }
 </style>
 </head>
 <body>
@@ -332,7 +405,7 @@
 
 <main>
   <div class="sidebar">
-    <section class="panel" id="packingPanel">
+    <section class="panel view" id="packingPanel" data-view="packing">
       <h3 onclick="onPanelHeaderClick(event,'packing')"><span class="panel-toggle" id="packingToggle">▾</span> 🧳 Inpaklijst <span class="panel-count" id="packingCount"></span><button class="panel-import" onclick="openImportModal('packing')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
       <ul class="panel-list" id="packingList"></ul>
       <div class="left-out" id="packingLeftOut"></div>
@@ -357,7 +430,7 @@
       </div>
     </section>
 
-    <section class="panel" id="prepPanel">
+    <section class="panel view" id="prepPanel" data-view="prep">
       <h3 onclick="onPanelHeaderClick(event,'prep')"><span class="panel-toggle" id="prepToggle">▾</span> ✅ Voor te bereiden <span class="panel-count" id="prepCount"></span><button class="panel-import" onclick="openImportModal('prep')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
       <ul class="panel-list" id="prepList"></ul>
       <div class="left-out" id="prepLeftOut"></div>
@@ -367,9 +440,15 @@
       </div>
       <label class="add-scope"><input type="checkbox" id="prepGeneral"> Ook op al mijn vakanties (algemeen)</label>
     </section>
+
+    <section class="panel view" id="placesPanel" data-view="places">
+      <h3 onclick="onPanelHeaderClick(event,'places')"><span class="panel-toggle" id="placesToggle">▾</span> 🗺️ Nuttige plaatsen <span class="panel-count" id="placesCount"></span></h3>
+      <ul class="panel-list" id="placesList"></ul>
+      <button class="add-place-btn" onclick="openPlaceModal()">+ Plaats toevoegen</button>
+    </section>
   </div>
 
-  <div>
+  <div class="view" id="boardSection" data-view="board">
     <div class="board-header">
       <h3>📍 Dagindeling &amp; activiteiten</h3>
       <div class="board-actions">
@@ -381,6 +460,13 @@
     <div class="board" id="board"></div>
   </div>
 </main>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button data-section="board" onclick="setSection('board')"><span class="bn-ico">📍</span>Dag</button>
+  <button data-section="places" onclick="setSection('places')"><span class="bn-ico">🗺️</span>Plaatsen</button>
+  <button data-section="packing" onclick="setSection('packing')"><span class="bn-ico">🧳<span class="bn-badge" id="navPackingBadge"></span></span>Inpak</button>
+  <button data-section="prep" onclick="setSection('prep')"><span class="bn-ico">✅<span class="bn-badge" id="navPrepBadge"></span></span>Voorbereiden</button>
+</nav>
 
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
@@ -430,6 +516,33 @@
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeItemModal()">Annuleren</button>
       <button class="btn-primary" onclick="saveItem()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="placeModalBackdrop">
+  <div class="modal">
+    <h3 id="placeModalTitle">Nieuwe plaats</h3>
+    <div>
+      <label>Naam</label>
+      <input type="text" id="placeNameInput" placeholder="bv. Taverna To Karnagio">
+    </div>
+    <div>
+      <label>Type</label>
+      <select id="placeCategoryInput"></select>
+    </div>
+    <div>
+      <label>Adres of link (optioneel)</label>
+      <input type="text" id="placeLocationInput" placeholder="bv. Oude haven Chania, of een www-link">
+    </div>
+    <div>
+      <label>Notities (optioneel)</label>
+      <textarea id="placeNotesInput" rows="2" placeholder="bv. open tot 23u, dichtstbijzijnde spoeddienst…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-danger" id="placeDeleteBtn" onclick="deletePlaceFromModal()">Verwijderen</button>
+      <button class="btn-ghost" onclick="closePlaceModal()">Annuleren</button>
+      <button class="btn-primary" onclick="savePlace()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -628,6 +741,31 @@ const PACKING_CATS = [
 ];
 const CAT_LABEL = Object.fromEntries(PACKING_CATS.map(c=>[c.key, c.label]));
 
+// Nuttige plaatsen: types verdeeld over twee groepen (eten / diensten & nood).
+const PLACE_GROUPS = [
+  {key:'eten',   label:'🍽️ Eten & drinken'},
+  {key:'dienst', label:'🧭 Diensten & nood'}
+];
+const PLACE_CATS = [
+  {key:'restaurant',  label:'🍽️ Restaurant',        group:'eten'},
+  {key:'cafe',        label:'☕ Café / bar',          group:'eten'},
+  {key:'bakker',      label:'🥐 Bakker',             group:'eten'},
+  {key:'ijs',         label:'🍦 IJs / dessert',      group:'eten'},
+  {key:'supermarkt',  label:'🛒 Supermarkt',         group:'dienst'},
+  {key:'apotheek',    label:'💊 Apotheek',           group:'dienst'},
+  {key:'ziekenhuis',  label:'🏥 Ziekenhuis / spoed', group:'dienst'},
+  {key:'dokter',      label:'🩺 Dokter',             group:'dienst'},
+  {key:'wassalon',    label:'🧺 Wassalon',           group:'dienst'},
+  {key:'geldautomaat',label:'🏧 Geldautomaat',       group:'dienst'},
+  {key:'tankstation', label:'⛽ Tankstation',        group:'dienst'},
+  {key:'winkel',      label:'🛍️ Winkel',             group:'dienst'},
+  {key:'overig',      label:'📍 Overig',             group:'dienst'}
+];
+const PLACE_CAT_LABEL = Object.fromEntries(PLACE_CATS.map(c=>[c.key, c.label]));
+const PLACE_CAT_GROUP = Object.fromEntries(PLACE_CATS.map(c=>[c.key, c.group]));
+function placeCatEmoji(key){ return (PLACE_CAT_LABEL[key] || '📍 Overig').split(' ')[0]; }
+function placeCatName(key){ return (PLACE_CAT_LABEL[key] || '📍 Overig').split(' ').slice(1).join(' '); }
+
 // Trefwoorden per categorie; eerste match wint (volgorde = prioriteit).
 // Bewust GEEN trefwoorden voor taken als "frigo/inchecken/alarm" zodat die
 // in "Overig" belanden en opvallen (ze horen eigenlijk bij Voorbereiding).
@@ -674,6 +812,11 @@ function defaultState(){
           {id:uid(), text:'Auto huren regelen', done:false},
           {id:uid(), text:'Kat/planten opvang regelen', done:false}
         ],
+        places:[
+          {id:uid(), name:'Taverna To Karnagio', category:'restaurant', location:'Oude haven, Chania', notes:'verse vis — reserveer rond 20u'},
+          {id:uid(), name:'Apotheek centrum', category:'apotheek', location:'Chania centrum', notes:''},
+          {id:uid(), name:'Ziekenhuis Chania', category:'ziekenhuis', location:'General Hospital of Chania', notes:'spoed 24/7'}
+        ],
         items:[],
         templateState:emptyTemplateState()
       },
@@ -685,6 +828,10 @@ function defaultState(){
         ],
         prep:[
           {id:uid(), text:'Route uitstippelen', done:false}
+        ],
+        places:[
+          {id:uid(), name:'Wassalon Lav\'Matic', category:'wassalon', location:'Aix-en-Provence', notes:''},
+          {id:uid(), name:'Boulangerie du coin', category:'bakker', location:'Aix-en-Provence', notes:'verse croissants \'s ochtends'}
         ],
         items:[
           {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
@@ -726,6 +873,7 @@ function migrateTemplate(s){
   s.trips.forEach(t=>{
     t.packing = Array.isArray(t.packing) ? t.packing : [];
     t.prep = Array.isArray(t.prep) ? t.prep : [];
+    t.places = Array.isArray(t.places) ? t.places : [];
     t.templateState = t.templateState || emptyTemplateState();
     ['packing','prep'].forEach(k=>{
       t.templateState[k] = t.templateState[k] || {done:{}, skip:{}};
@@ -1002,7 +1150,9 @@ function renderAll(){
     settingsBtn.style.display = 'none';
     document.getElementById('packingList').innerHTML = '';
     document.getElementById('prepList').innerHTML = '';
+    document.getElementById('placesList').innerHTML = '';
     document.getElementById('board').innerHTML = '';
+    refreshNav();
     return;
   }
   settingsBtn.style.display = '';
@@ -1019,7 +1169,9 @@ function renderAll(){
 
   renderChecklist('packing');
   renderChecklist('prep');
+  renderPlaces();
   renderBoard();
+  refreshNav();
 }
 
 function checklistUlId(kind){ return kind==='packing' ? 'packingList' : 'prepList'; }
@@ -1167,19 +1319,32 @@ function togglePanel(kind){
   persist();
   applyPanelCollapse(kind);
 }
+const PANEL_IDS = {
+  packing:{panel:'packingPanel', toggle:'packingToggle', count:'packingCount'},
+  prep:   {panel:'prepPanel',    toggle:'prepToggle',    count:'prepCount'},
+  places: {panel:'placesPanel',  toggle:'placesToggle',  count:'placesCount'}
+};
 function applyPanelCollapse(kind){
   const trip = getTrip();
   if(!trip) return;
+  const ids = PANEL_IDS[kind];
+  if(!ids) return;
   const isC = !!(trip.collapsed && trip.collapsed[kind]);
-  const panel = document.getElementById(kind==='packing' ? 'packingPanel' : 'prepPanel');
+  const panel = document.getElementById(ids.panel);
   panel.classList.toggle('collapsed', isC);
-  const caret = document.getElementById(kind==='packing' ? 'packingToggle' : 'prepToggle');
+  const caret = document.getElementById(ids.toggle);
   if(caret) caret.textContent = isC ? '▸' : '▾';
-  const {general, extras} = effectiveList(trip, kind);
-  const items = general.concat(extras);
-  const done = items.filter(x=>x.done).length;
-  const cnt = document.getElementById(kind==='packing' ? 'packingCount' : 'prepCount');
-  if(cnt) cnt.textContent = items.length ? `${done}/${items.length}` : '';
+  const cnt = document.getElementById(ids.count);
+  if(!cnt) return;
+  if(kind==='places'){
+    const n = (trip.places||[]).length;
+    cnt.textContent = n ? String(n) : '';
+  } else {
+    const {general, extras} = effectiveList(trip, kind);
+    const items = general.concat(extras);
+    const done = items.filter(x=>x.done).length;
+    cnt.textContent = items.length ? `${done}/${items.length}` : '';
+  }
 }
 
 function startRename(kind, id, general){
@@ -1320,6 +1485,176 @@ function addChecklistItem(kind){
   if(cat!=null) catCollapsed()[cat] = false;
   persist();
   renderChecklist(kind);
+}
+
+/* ---- nuttige plaatsen ---- */
+// Ingeklapte groepen (eten / diensten) per vakantie bewaard en meegesynct.
+function placeCollapsed(){
+  const t = getTrip();
+  if(!t) return {};
+  if(!t.placeCollapsed) t.placeCollapsed = {};
+  return t.placeCollapsed;
+}
+function togglePlaceGroup(key){
+  const m = placeCollapsed();
+  m[key] = !m[key];
+  persist();
+  renderPlaces();
+}
+function placeRowHtml(p){
+  const notes = (p.notes||'').trim();
+  const del = `<button class="del ${pendingDeleteId===p.id?'armed':''}" onclick="deletePlace('${p.id}')">${pendingDeleteId===p.id?'Zeker?':'✕'}</button>`;
+  const catName = placeCatName(p.category);
+  return `<li class="place-row" onclick="if(!event.target.closest('a,button'))editPlace('${p.id}')">
+    <span class="place-emoji">${placeCatEmoji(p.category)}</span>
+    <div class="place-body">
+      <span class="place-name">${escapeHtml(p.name)}${catName?`<span class="place-cat">${escapeHtml(catName)}</span>`:''}</span>
+      ${notes?`<div class="place-notes">${escapeHtml(notes)}</div>`:''}
+      ${locationLinksHtml(p)}
+    </div>
+    ${del}
+  </li>`;
+}
+function renderPlaces(){
+  const ul = document.getElementById('placesList');
+  if(!ul) return;
+  const trip = getTrip();
+  ul.innerHTML = '';
+  if(!trip){ return; }
+  const places = trip.places || [];
+  if(!places.length){
+    ul.innerHTML = '<li class="places-empty">Nog geen plaatsen — voeg restaurants, apotheek, ziekenhuis, wassalon… toe.</li>';
+    applyPanelCollapse('places');
+    return;
+  }
+  const byGroup = {};
+  places.forEach(p=>{
+    const g = PLACE_CAT_GROUP[p.category] || 'dienst';
+    (byGroup[g] = byGroup[g] || []).push(p);
+  });
+  let html = '';
+  PLACE_GROUPS.forEach(g=>{
+    const list = byGroup[g.key];
+    if(!list || !list.length) return;
+    list.sort((a,b)=> (a.category||'').localeCompare(b.category||'') || (a.name||'').localeCompare(b.name||''));
+    const isC = !!placeCollapsed()[g.key];
+    html += `<li class="places-group-header${isC?' collapsed':''}" onclick="togglePlaceGroup('${g.key}')">
+      <span class="cat-caret">${isC?'▸':'▾'}</span>
+      <span class="cat-name">${escapeHtml(g.label)}</span>
+      <span class="cat-count">${list.length}</span>
+    </li>`;
+    if(!isC) list.forEach(p=>{ html += placeRowHtml(p); });
+  });
+  ul.innerHTML = html;
+  applyPanelCollapse('places');
+}
+
+let editingPlaceId = null;
+function fillPlaceCategorySelect(){
+  const sel = document.getElementById('placeCategoryInput');
+  if(sel.dataset.filled) return;
+  let html = '';
+  PLACE_GROUPS.forEach(g=>{
+    html += `<optgroup label="${escapeAttr(g.label)}">`;
+    PLACE_CATS.filter(c=>c.group===g.key).forEach(c=>{
+      html += `<option value="${c.key}">${escapeHtml(c.label)}</option>`;
+    });
+    html += '</optgroup>';
+  });
+  sel.innerHTML = html;
+  sel.dataset.filled = '1';
+}
+function openPlaceModal(existing){
+  const trip = getTrip();
+  if(!trip){ alert('Maak eerst een vakantie aan.'); return; }
+  fillPlaceCategorySelect();
+  const place = (existing && typeof existing==='object') ? existing : null;
+  editingPlaceId = place ? place.id : null;
+  document.getElementById('placeModalTitle').textContent = place ? 'Plaats bewerken' : 'Nieuwe plaats';
+  document.getElementById('placeNameInput').value = place ? place.name : '';
+  document.getElementById('placeCategoryInput').value = place ? (place.category||'restaurant') : 'restaurant';
+  document.getElementById('placeLocationInput').value = place ? (place.location||'') : '';
+  document.getElementById('placeNotesInput').value = place ? (place.notes||'') : '';
+  document.getElementById('placeDeleteBtn').style.display = place ? '' : 'none';
+  document.getElementById('placeModalBackdrop').classList.add('open');
+}
+function closePlaceModal(){
+  document.getElementById('placeModalBackdrop').classList.remove('open');
+  editingPlaceId = null;
+}
+function editPlace(id){
+  const trip = getTrip();
+  if(!trip) return;
+  const p = (trip.places||[]).find(x=>x.id===id);
+  if(p) openPlaceModal(p);
+}
+function savePlace(){
+  const trip = getTrip();
+  if(!trip) return;
+  const name = document.getElementById('placeNameInput').value.trim();
+  if(!name) return;
+  const category = document.getElementById('placeCategoryInput').value;
+  const location = document.getElementById('placeLocationInput').value.trim();
+  const notes = document.getElementById('placeNotesInput').value.trim();
+  if(!Array.isArray(trip.places)) trip.places = [];
+  if(editingPlaceId){
+    const p = trip.places.find(x=>x.id===editingPlaceId);
+    if(p) Object.assign(p, {name, category, location, notes});
+  } else {
+    trip.places.push({id:uid(), name, category, location, notes});
+  }
+  placeCollapsed()[PLACE_CAT_GROUP[category] || 'dienst'] = false; // groep zichtbaar houden
+  persist();
+  closePlaceModal();
+  renderPlaces();
+  refreshNav();
+}
+function deletePlace(id){
+  if(!armDelete(id, renderPlaces)) return;
+  const trip = getTrip();
+  trip.places = (trip.places||[]).filter(x=>x.id!==id);
+  persist();
+  renderPlaces();
+  refreshNav();
+}
+function deletePlaceFromModal(){
+  if(!editingPlaceId){ closePlaceModal(); return; }
+  const id = editingPlaceId;
+  const trip = getTrip();
+  trip.places = (trip.places||[]).filter(x=>x.id!==id);
+  persist();
+  closePlaceModal();
+  renderPlaces();
+  refreshNav();
+}
+
+/* ---- sectie-navigatie (onderbalk op gsm) ---- */
+let activeSection = 'board';
+document.body.dataset.section = activeSection;
+function setSection(s){
+  activeSection = s;
+  document.body.dataset.section = s;
+  refreshNav();
+  window.scrollTo(0, 0);
+}
+function refreshNav(){
+  const trip = getTrip();
+  const pal = trip ? tripPalette(trip) : PALETTES[0];
+  document.querySelectorAll('.bottom-nav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.section===activeSection);
+    b.style.setProperty('--nav-accent', pal.accent);
+  });
+  const setBadge = (id, n)=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = n > 0 ? String(n) : '';
+    el.style.display = n > 0 ? '' : 'none';
+  };
+  if(!trip){ setBadge('navPackingBadge', 0); setBadge('navPrepBadge', 0); return; }
+  const pk = effectiveList(trip, 'packing');
+  const pr = effectiveList(trip, 'prep');
+  setBadge('navPackingBadge', pk.general.concat(pk.extras).filter(x=>!x.done).length);
+  setBadge('navPrepBadge', pr.general.concat(pr.extras).filter(x=>!x.done).length);
 }
 
 function fmtDate(startDate, dayOffset){
