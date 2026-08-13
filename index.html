@@ -336,6 +336,23 @@
   .acc-divider{border-top:1px solid var(--line); margin:6px 0 2px;}
   .acc-add-label{font-size:12px; font-weight:600; color:#6b6459; text-align:left;}
 
+  /* ---- uitleg: op beginscherm zetten ---- */
+  .guide{max-height:88vh; overflow:auto; width:min(400px,92vw); text-align:left;}
+  .guide h2{text-align:center;}
+  .guide .guide-intro{font-size:13px; color:#6b6459; margin:0;}
+  .guide ol{margin:6px 0 0; padding-left:20px; display:flex; flex-direction:column; gap:10px;}
+  .guide ol li{font-size:14px; line-height:1.45;}
+  .guide .share-ic{
+    display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+    border:1px solid var(--gr-mid); border-radius:5px; color:var(--gr-mid); font-size:12px;
+    vertical-align:-4px; margin:0 1px;
+  }
+  .guide .guide-note{
+    font-size:12px; color:#8a8175; background:var(--gr-wash); border-radius:8px;
+    padding:9px 11px; margin:2px 0 0;
+  }
+  .guide b{color:var(--ink);}
+
   /* ---- nuttige plaatsen ---- */
   .places-group-header{
     display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
@@ -707,7 +724,22 @@
     <input type="password" id="accKeyInput" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')addAccountFromModal()" style="text-align:left;">
     <div class="gate-error" id="accountError"></div>
     <button onclick="addAccountFromModal()">Toevoegen &amp; openen</button>
+    <button class="ghost" onclick="openInstallGuide()">📲 Op beginscherm zetten (uitleg)</button>
     <button class="ghost" onclick="closeAccountModal()">Sluiten</button>
+  </div>
+</div>
+
+<div class="gate-backdrop" id="installBackdrop" style="background:rgba(30,25,20,.4);">
+  <div class="gate guide">
+    <h2 class="display">📲 Zet de planner op je beginscherm</h2>
+    <p class="guide-intro">Zo open je de vakantieplanner voortaan als een echte app — met één tik, en mooi op volledig scherm. Op je <b>iPhone</b> (in <b>Safari</b>):</p>
+    <ol>
+      <li>Tik onderaan op de <b>Deel</b>-knop <span class="share-ic">↑</span> (vierkantje met pijltje omhoog).</li>
+      <li>Scrol in het menu en tik op <b>“Zet op beginscherm”</b>.</li>
+      <li>Tik rechtsboven op <b>“Voeg toe”</b>.</li>
+    </ol>
+    <p class="guide-note">Klaar! Je vindt <b>Vakantieplanner</b> nu tussen je apps. Gebruik hiervoor <b>Safari</b> (niet Chrome). <br>Op <b>Android</b>: tik op het menu <b>⋮</b> en kies <b>“Toevoegen aan startscherm”</b>.</p>
+    <button onclick="closeInstallGuide()">Begrepen</button>
   </div>
 </div>
 
@@ -2427,6 +2459,7 @@ async function submitGate(){
     document.getElementById('gateInput').value = '';
     closeGate();
     renderAll();
+    maybeShowInstallGuide();
   }catch(e){
     console.error(e);
     localStorage.removeItem(ACCESS_KEY_STORAGE);
@@ -2547,7 +2580,61 @@ async function addAccountFromModal(){
   await switchAccount(key, label);
 }
 
+/* ---- deelbare link met vooraf ingevulde code (?code=...) ---- */
+function getCodeFromUrl(){
+  try{
+    const p = new URLSearchParams(location.search);
+    let c = p.get('code') || p.get('key');
+    if(!c && location.hash){
+      const h = new URLSearchParams(location.hash.replace(/^#/, ''));
+      c = h.get('code') || h.get('key');
+    }
+    return c ? c.trim() : '';
+  }catch(e){ return ''; }
+}
+function stripCodeFromUrl(){
+  // Haal de code uit de adresbalk zodat ze niet blijft rondslingeren.
+  try{ history.replaceState(null, '', location.pathname); }catch(e){}
+}
+
+/* ---- uitleg: app op beginscherm zetten ---- */
+const GUIDE_KEY = 'vakantie-planner-guide-seen';
+function isStandalone(){
+  return window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+}
+function openInstallGuide(){ document.getElementById('installBackdrop').classList.add('open'); }
+function closeInstallGuide(){ document.getElementById('installBackdrop').classList.remove('open'); }
+function maybeShowInstallGuide(){
+  if(localStorage.getItem(GUIDE_KEY)) return;   // al één keer getoond
+  localStorage.setItem(GUIDE_KEY, '1');
+  if(isStandalone()) return;                    // al als app geopend: niet nodig
+  openInstallGuide();
+}
+
 (async function init(){
+  // Deelbare link: staat er een code in de URL, log daar dan meteen mee in.
+  if(REMOTE_ENABLED){
+    const urlCode = getCodeFromUrl();
+    if(urlCode){
+      stripCodeFromUrl();
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(DIRTY_KEY);
+      localStorage.setItem(ACCESS_KEY_STORAGE, urlCode);
+      try{
+        await loadState();
+        rememberAccount(urlCode, 'Gedeelde planner');
+        renderAll();
+        maybeShowInstallGuide();
+        return;
+      }catch(e){
+        console.error(e);
+        localStorage.removeItem(ACCESS_KEY_STORAGE);
+        openGate(String(e.message).includes('invalid key') ? 'De code in de link is ongeldig.' : 'Kon geen verbinding maken. Probeer opnieuw.');
+        return;
+      }
+    }
+  }
   if(REMOTE_ENABLED && !localStorage.getItem(ACCESS_KEY_STORAGE)){
     openGate();
     return;
@@ -2560,6 +2647,7 @@ async function addAccountFromModal(){
       if(cur && !getAccounts().some(x => x.key === cur)) rememberAccount(cur, 'Mijn account');
     }
     renderAll();
+    maybeShowInstallGuide();
   }catch(e){
     console.error(e);
     if(REMOTE_ENABLED){
