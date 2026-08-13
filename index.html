@@ -314,6 +314,27 @@
     border:none; background:var(--gr-accent); color:white; border-radius:8px;
     padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer;
   }
+  .gate button.ghost{background:none; color:#6b6459; border:1px solid var(--line);}
+
+  /* ---- account-switcher ---- */
+  .acc-list{display:flex; flex-direction:column; gap:8px; text-align:left;}
+  .acc-item{
+    display:flex; align-items:center; gap:10px; border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; cursor:pointer; background:white;
+  }
+  .acc-item.active{border-color:var(--gr-accent); background:var(--gr-wash);}
+  @media (hover:hover){ .acc-item:hover{background:var(--paper-dim);} }
+  .acc-item .acc-ic{font-size:18px; flex:none;}
+  .acc-item .acc-body{flex:1; min-width:0;}
+  .acc-item .acc-name{font-size:14px; font-weight:600; overflow-wrap:anywhere;}
+  .acc-item .acc-sub{font-size:11.5px; color:#9a9284; overflow-wrap:anywhere;}
+  .acc-item .acc-active-tag{font-size:11px; font-weight:700; color:var(--gr-accent); flex:none;}
+  .acc-item .acc-forget{
+    margin-left:auto; border:none; background:none; color:#c0392b; cursor:pointer;
+    font-size:12px; padding:4px 6px; flex:none;
+  }
+  .acc-divider{border-top:1px solid var(--line); margin:6px 0 2px;}
+  .acc-add-label{font-size:12px; font-weight:600; color:#6b6459; text-align:left;}
 
   /* ---- nuttige plaatsen ---- */
   .places-group-header{
@@ -414,7 +435,8 @@
   <div class="trip-meta">
     <span id="tripSummary"></span>
     <button class="meta-btn" id="tripSettingsBtn" onclick="openTripModal(currentTripId)">⚙️ Instellingen</button>
-    <button class="meta-btn" id="refreshBtn" onclick="refreshData()" style="margin-left:auto;">🔄 Vernieuwen</button>
+    <button class="meta-btn" id="accountBtn" onclick="openAccountModal()" style="margin-left:auto;">👤 Account</button>
+    <button class="meta-btn" id="refreshBtn" onclick="refreshData()">🔄 Vernieuwen</button>
   </div>
 </header>
 
@@ -671,6 +693,21 @@
     <input type="password" id="gateInput" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')submitGate()">
     <div class="gate-error" id="gateError"></div>
     <button onclick="submitGate()">Openen</button>
+  </div>
+</div>
+
+<div class="gate-backdrop" id="accountBackdrop" style="background:rgba(30,25,20,.4);">
+  <div class="gate" style="text-align:left;">
+    <h2 class="display" style="text-align:center;">Account wisselen</h2>
+    <p style="text-align:center;">Kies met welke toegangscode je de planner opent. Zo kan je vlot switchen tussen je privé-planner en een gedeelde reisplanner.</p>
+    <div class="acc-list" id="accList"></div>
+    <div class="acc-divider"></div>
+    <div class="acc-add-label">Andere toegangscode toevoegen</div>
+    <input type="text" id="accLabelInput" placeholder="Naam (bv. Frankrijk gedeeld)" style="text-align:left;">
+    <input type="password" id="accKeyInput" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')addAccountFromModal()" style="text-align:left;">
+    <div class="gate-error" id="accountError"></div>
+    <button onclick="addAccountFromModal()">Toevoegen &amp; openen</button>
+    <button class="ghost" onclick="closeAccountModal()">Sluiten</button>
   </div>
 </div>
 
@@ -2378,10 +2415,15 @@ function closeGate(){
 async function submitGate(){
   const key = document.getElementById('gateInput').value.trim();
   if(!key) return;
+  // Verse login: eventuele lokale cache/dirty van een ander account wissen,
+  // zodat we nooit data van account A naar account B pushen.
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(DIRTY_KEY);
   localStorage.setItem(ACCESS_KEY_STORAGE, key);
   document.getElementById('gateError').textContent = '';
   try{
     await loadState();
+    rememberAccount(key, 'Mijn account');
     document.getElementById('gateInput').value = '';
     closeGate();
     renderAll();
@@ -2393,6 +2435,118 @@ async function submitGate(){
   }
 }
 
+/* ---- account-switcher: meerdere toegangscodes onthouden en wisselen ---- */
+const ACCOUNTS_KEY = 'vakantie-planner-accounts';
+function getAccounts(){
+  try{ const a = JSON.parse(localStorage.getItem(ACCOUNTS_KEY)); return Array.isArray(a) ? a : []; }
+  catch(e){ return []; }
+}
+function saveAccounts(a){ try{ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(a)); }catch(e){} }
+function rememberAccount(key, label){
+  if(!key) return;
+  const a = getAccounts();
+  const ex = a.find(x => x.key === key);
+  if(ex){ if(label) ex.label = label; }
+  else a.push({label: label || ('Account ' + (a.length + 1)), key});
+  saveAccounts(a);
+}
+function forgetAccount(key){ saveAccounts(getAccounts().filter(x => x.key !== key)); renderAccountList(); }
+function maskKey(key){
+  if(!key) return '';
+  return key.length <= 3 ? '•••' : ('••••' + key.slice(-3));
+}
+
+// Zorgt dat openstaande wijzigingen van het huidige account nog worden
+// weggeschreven vóór we van account wisselen (voorkomt dataverlies).
+async function flushPending(){
+  if(!REMOTE_ENABLED) return;
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  if(localStorage.getItem(DIRTY_KEY)){
+    try{ await pushLocal(localStorage.getItem(ACCESS_KEY_STORAGE)); }catch(e){ /* blijft dirty */ }
+  }
+}
+
+function openAccountModal(){
+  document.getElementById('accountError').textContent = '';
+  document.getElementById('accKeyInput').value = '';
+  document.getElementById('accLabelInput').value = '';
+  renderAccountList();
+  document.getElementById('accountBackdrop').classList.add('open');
+}
+function closeAccountModal(){
+  document.getElementById('accountBackdrop').classList.remove('open');
+}
+function renderAccountList(){
+  const wrap = document.getElementById('accList');
+  const active = localStorage.getItem(ACCESS_KEY_STORAGE);
+  const accounts = getAccounts();
+  wrap.innerHTML = '';
+  if(!accounts.length){
+    wrap.innerHTML = '<div class="places-empty" style="margin:4px 0;">Nog geen accounts bewaard op dit toestel. Voeg er hieronder één toe.</div>';
+    return;
+  }
+  accounts.forEach(acc=>{
+    const isActive = acc.key === active;
+    const row = document.createElement('div');
+    row.className = 'acc-item' + (isActive ? ' active' : '');
+    row.innerHTML = `
+      <span class="acc-ic">${isActive ? '✅' : '👤'}</span>
+      <div class="acc-body">
+        <div class="acc-name">${escapeHtml(acc.label || 'Account')}</div>
+        <div class="acc-sub">code ${escapeHtml(maskKey(acc.key))}</div>
+      </div>
+      ${isActive ? '<span class="acc-active-tag">actief</span>' : ''}
+      <button class="acc-forget" title="Van dit toestel vergeten">vergeten</button>
+    `;
+    row.querySelector('.acc-forget').onclick = (e)=>{ e.stopPropagation(); forgetAccount(acc.key); };
+    row.onclick = (e)=>{ if(e.target.closest('.acc-forget')) return; if(!isActive) switchAccount(acc.key, acc.label); };
+    wrap.appendChild(row);
+  });
+}
+
+// Eén robuust pad voor zowel wisselen naar een bewaard account als een nieuwe
+// code toevoegen. Wist de lokale cache zodat accounts elkaar niet vervuilen,
+// en herstelt het vorige account als de nieuwe code niet werkt.
+async function switchAccount(key, label){
+  if(!key) return;
+  const prevKey = localStorage.getItem(ACCESS_KEY_STORAGE);
+  const errEl = document.getElementById('accountError');
+  errEl.textContent = '';
+  if(key === prevKey){ if(label) rememberAccount(key, label); closeAccountModal(); return; }
+  await flushPending();
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(DIRTY_KEY);
+  localStorage.setItem(ACCESS_KEY_STORAGE, key);
+  try{
+    await loadState();
+    rememberAccount(key, label);
+    closeAccountModal();
+    renderAll();
+  }catch(e){
+    console.error(e);
+    const msg = String(e.message).includes('invalid key') ? 'Ongeldige toegangscode.' : 'Kon geen verbinding maken. Probeer opnieuw.';
+    errEl.textContent = msg;
+    // Terug naar het vorige account.
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(DIRTY_KEY);
+    if(prevKey){
+      localStorage.setItem(ACCESS_KEY_STORAGE, prevKey);
+      try{ await loadState(); renderAll(); }catch(_){ }
+    } else {
+      localStorage.removeItem(ACCESS_KEY_STORAGE);
+      closeAccountModal();
+      openGate(msg);
+    }
+  }
+}
+
+async function addAccountFromModal(){
+  const key = document.getElementById('accKeyInput').value.trim();
+  const label = document.getElementById('accLabelInput').value.trim();
+  if(!key){ document.getElementById('accountError').textContent = 'Vul een toegangscode in.'; return; }
+  await switchAccount(key, label);
+}
+
 (async function init(){
   if(REMOTE_ENABLED && !localStorage.getItem(ACCESS_KEY_STORAGE)){
     openGate();
@@ -2400,6 +2554,11 @@ async function submitGate(){
   }
   try{
     await loadState();
+    // Bestaand ingelogd account onthouden zodat het meteen in de switcher staat.
+    if(REMOTE_ENABLED){
+      const cur = localStorage.getItem(ACCESS_KEY_STORAGE);
+      if(cur && !getAccounts().some(x => x.key === cur)) rememberAccount(cur, 'Mijn account');
+    }
     renderAll();
   }catch(e){
     console.error(e);
