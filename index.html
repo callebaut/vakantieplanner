@@ -352,6 +352,19 @@
     padding:9px 11px; margin:2px 0 0;
   }
   .guide b{color:var(--ink);}
+  .guide-detected{
+    font-size:12px; color:#6b6459; background:var(--paper-dim); border-radius:8px;
+    padding:7px 11px; margin:0 0 4px;
+  }
+  .guide-more{margin-top:12px; border-top:1px solid var(--line); padding-top:8px;}
+  .guide-more summary{
+    font-size:12.5px; color:var(--gr-mid); cursor:pointer; font-weight:600; list-style:none;
+  }
+  .guide-more summary::-webkit-details-marker{display:none;}
+  .guide-more summary::before{content:'▸ '; font-size:10px;}
+  .guide-more[open] summary::before{content:'▾ ';}
+  .guide-other{margin-top:12px;}
+  .guide-other-label{font-size:12px; font-weight:700; color:#6b6459; margin-bottom:2px;}
 
   /* ---- nuttige plaatsen ---- */
   .places-group-header{
@@ -732,13 +745,8 @@
 <div class="gate-backdrop" id="installBackdrop" style="background:rgba(30,25,20,.4);">
   <div class="gate guide">
     <h2 class="display">📲 Zet de planner op je beginscherm</h2>
-    <p class="guide-intro">Zo open je de vakantieplanner voortaan als een echte app — met één tik, en mooi op volledig scherm. Op je <b>iPhone</b> (in <b>Safari</b>):</p>
-    <ol>
-      <li>Tik onderaan op de <b>Deel</b>-knop <span class="share-ic">↑</span> (vierkantje met pijltje omhoog).</li>
-      <li>Scrol in het menu en tik op <b>“Zet op beginscherm”</b>.</li>
-      <li>Tik rechtsboven op <b>“Voeg toe”</b>.</li>
-    </ol>
-    <p class="guide-note">Klaar! Je vindt <b>Vakantieplanner</b> nu tussen je apps. Gebruik hiervoor <b>Safari</b> (niet Chrome). <br>Op <b>Android</b>: tik op het menu <b>⋮</b> en kies <b>“Toevoegen aan startscherm”</b>.</p>
+    <p class="guide-intro">Zo open je de vakantieplanner voortaan als een echte app — met één tik, mooi op volledig scherm.</p>
+    <div id="installContent"></div>
     <button onclick="closeInstallGuide()">Begrepen</button>
   </div>
 </div>
@@ -2597,13 +2605,93 @@ function stripCodeFromUrl(){
   try{ history.replaceState(null, '', location.pathname); }catch(e){}
 }
 
-/* ---- uitleg: app op beginscherm zetten ---- */
+/* ---- uitleg: app op beginscherm zetten (per toestel/browser) ---- */
 const GUIDE_KEY = 'vakantie-planner-guide-seen';
+const SHARE = '<span class="share-ic">↑</span>';
+const INSTALL_VARIANTS = {
+  'ios-safari': { label:'iPhone / iPad · Safari', steps:[
+    `Tik onderaan op de <b>Deel</b>-knop ${SHARE} (vierkantje met pijltje omhoog).`,
+    `Scrol en tik op <b>“Zet op beginscherm”</b>.`,
+    `Tik rechtsboven op <b>“Voeg toe”</b>.`
+  ]},
+  'ios-other': { label:'iPhone / iPad · Chrome / Edge / Firefox', steps:[
+    `Tik op de <b>⋯</b> (drie puntjes) of de <b>Deel</b>-knop ${SHARE} — meestal rechtsboven of onderaan.`,
+    `Kies <b>“Delen”</b> als dat verschijnt, en dan <b>“Zet op beginscherm”</b>.`,
+    `Tik op <b>“Voeg toe”</b>.`
+  ], note:`Tip: in <b>Safari</b> gaat het het vlotst — daar staat de Deel-knop ${SHARE} meteen in de balk, zonder de ⋯.` },
+  'android-chrome': { label:'Android · Chrome', steps:[
+    `Tik rechtsboven op <b>⋮</b> (de drie puntjes).`,
+    `Tik op <b>“Toevoegen aan startscherm”</b> of <b>“App installeren”</b>.`,
+    `Tik op <b>“Toevoegen”</b> / <b>“Installeren”</b>.`
+  ]},
+  'android-samsung': { label:'Android · Samsung Internet', steps:[
+    `Tik onderaan op het <b>menu</b> (≡).`,
+    `Tik op <b>“Pagina toevoegen aan”</b> en kies <b>“Startscherm”</b>.`,
+    `Bevestig met <b>“Toevoegen”</b>.`
+  ]},
+  'android-firefox': { label:'Android · Firefox', steps:[
+    `Tik op <b>⋮</b> (de drie puntjes).`,
+    `Tik op <b>“Toevoegen aan startscherm”</b>.`,
+    `Bevestig met <b>“Toevoegen”</b>.`
+  ]},
+  'android-edge': { label:'Android · Edge', steps:[
+    `Tik onderaan op <b>≡</b> (menu).`,
+    `Tik op <b>“Toevoegen aan telefoon”</b> → <b>“Startscherm”</b>.`,
+    `Bevestig met <b>“Toevoegen”</b>.`
+  ]},
+  'desktop': { label:'Computer', steps:[
+    `Klik in de adresbalk op het <b>installeer-icoon</b> (een schermpje met ⊕), of open het browsermenu.`,
+    `Kies <b>“App installeren”</b> of <b>“Toevoegen aan …”</b>.`,
+    `Bevestig.`
+  ]}
+};
+function detectPlatform(){
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(ua);
+  let browser;
+  if(isIOS){
+    if(/CriOS/.test(ua)) browser = 'chrome';
+    else if(/EdgiOS/.test(ua)) browser = 'edge';
+    else if(/FxiOS/.test(ua)) browser = 'firefox';
+    else browser = 'safari';
+  } else if(isAndroid){
+    if(/SamsungBrowser/.test(ua)) browser = 'samsung';
+    else if(/EdgA/.test(ua)) browser = 'edge';
+    else if(/Firefox/.test(ua)) browser = 'firefox';
+    else browser = 'chrome';
+  } else {
+    browser = 'desktop';
+  }
+  return { os: isIOS ? 'ios' : (isAndroid ? 'android' : 'desktop'), browser };
+}
+function platformKey(){
+  const {os, browser} = detectPlatform();
+  if(os === 'ios') return browser === 'safari' ? 'ios-safari' : 'ios-other';
+  if(os === 'android') return INSTALL_VARIANTS['android-'+browser] ? 'android-'+browser : 'android-chrome';
+  return 'desktop';
+}
+function variantHtml(v){
+  return `<ol>${v.steps.map(s=>`<li>${s}</li>`).join('')}</ol>` +
+    (v.note ? `<p class="guide-note">${v.note}</p>` : '');
+}
+function renderInstallGuide(){
+  const key = platformKey();
+  const cur = INSTALL_VARIANTS[key];
+  const others = Object.keys(INSTALL_VARIANTS).filter(k => k !== key);
+  document.getElementById('installContent').innerHTML =
+    `<div class="guide-detected">Gedetecteerd: <b>${cur.label}</b></div>` +
+    variantHtml(cur) +
+    `<details class="guide-more"><summary>Ander toestel of klopt dit niet? Toon alle stappen</summary>` +
+    others.map(k=>`<div class="guide-other"><div class="guide-other-label">${INSTALL_VARIANTS[k].label}</div>${variantHtml(INSTALL_VARIANTS[k])}</div>`).join('') +
+    `</details>`;
+}
 function isStandalone(){
   return window.navigator.standalone === true ||
     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 }
-function openInstallGuide(){ document.getElementById('installBackdrop').classList.add('open'); }
+function openInstallGuide(){ renderInstallGuide(); document.getElementById('installBackdrop').classList.add('open'); }
 function closeInstallGuide(){ document.getElementById('installBackdrop').classList.remove('open'); }
 function maybeShowInstallGuide(){
   if(localStorage.getItem(GUIDE_KEY)) return;   // al één keer getoond
