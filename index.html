@@ -808,6 +808,7 @@ function defaultState(){
   const phone = uid();
   return {
     _templateSeeded:true,
+    _franceAug2026Seeded:true,
     template:{
       packing:[
         {id:passport, text:'Paspoort / ID'},
@@ -837,74 +838,92 @@ function defaultState(){
       },
       {
         id:uid(), name:'Zuid-Frankrijk', emoji:'🇫🇷', transport:'🚗 Auto',
-        startDate:'2026-08-15', endDate:'2026-08-22',
-        notes:'Verblijf in Fabrezan (Corbières, Aude). Dag-tot-dag planning opgesteld door iemand anders. Toegankelijk gekozen voor wie moeilijk ter been is en voor kinderen (3, 5, 11 en 13 jaar).',
+        startDate:nextMonday(14), endDate:addDays(nextMonday(14),6),
         packing:[
-          {id:uid(), text:'Wegenkaart / vignet', done:false},
-          {id:uid(), text:'Strandspullen & zwemgerief', done:false},
-          {id:uid(), text:'Zonnebrand & petjes', done:false}
+          {id:uid(), text:'Wegenkaart / vignet', done:false}
         ],
         prep:[
-          {id:uid(), text:'Route uitstippelen', done:false},
-          {id:uid(), text:'Diner nacht 1 reserveren (La Rôtisserie Médiévale)', done:false},
-          {id:uid(), text:'Fietsverhuur regelen (fietskarren/kinderzitjes voor Canal du Midi)', done:false}
+          {id:uid(), text:'Route uitstippelen', done:false}
         ],
         places:[
-          // Bakkers (croissants & ambachtelijk brood)
-          {id:uid(), name:'Le Fournil des Corbières', category:'bakker', location:'Lézignan-Corbières', notes:'⭐ 4,8/5 · 8 min. Meest aanbevolen voor ambachtelijke croissants en chocoladebroodjes met roomboter.'},
-          {id:uid(), name:'Boulangerie Campaillette AMELISE', category:'bakker', location:'Lézignan-Corbières', notes:'⭐ 4,4/5 · 7 min. Uitstekend traditioneel stokbrood (Campaillette) en gemakkelijk parkeren voor de deur.'},
-          {id:uid(), name:'Les Pains d\'Adriana', category:'bakker', location:'Lézignan-Corbières', notes:'⭐ 4,3/5 · 8 min. Elke dag open van 06:00 tot 20:00 — ideaal voor vers brood op zondagmiddag.'},
-          // Supermarkten & boodschappen
-          {id:uid(), name:'E.Leclerc', category:'supermarkt', location:'Lézignan-Corbières', notes:'⭐ 4,1/5 · 10 min. Zeer grote hypermarkt, ideaal voor de eerste grote weekboodschappen voor 14 personen.'},
-          {id:uid(), name:'Carrefour Market', category:'supermarkt', location:'Lézignan-Corbières', notes:'⭐ 3,9/5 · 8 min. Grote supermarkt met vriesvakken, babyartikelen, bazaar en een voordelig tankstation.'},
-          {id:uid(), name:'Lidl', category:'supermarkt', location:'Lézignan-Corbières', notes:'⭐ 4,1/5 · 7 min. Goede optie voor snelle basisboodschappen tegen een scherpe prijs.'},
-          {id:uid(), name:'Épicerie Vival / Dorpswinkel Fabrezan', category:'supermarkt', location:'Fabrezan (in het dorp)', notes:'⭐ 4,5/5. Handige buurtwinkel voor vergeten boodschappen zonder de auto te hoeven nemen.'},
-          // IJssalons (voor tijdens de uitstapjes)
-          {id:uid(), name:'Tam Tam Glacier / Au Caprice', category:'ijs', location:'Haven van Gruissan', notes:'⭐ 4,4/5. Grote variëteit aan ambachtelijke smaken nabij de jachthaven van Gruissan.'},
-          {id:uid(), name:'La Fabrique de Glace', category:'ijs', location:'Lagrasse centrum', notes:'⭐ 4,6/5. IJs gemaakt van lokale melk in een van de mooiste dorpen van de regio.'},
-          {id:uid(), name:'Glacier Gourmand', category:'ijs', location:'Narbonne-Plage', notes:'⭐ 4,1/5. Aan de boulevard, ideaal voor een ambachtelijk ijsje of pannenkoek na het strand.'},
-          // Restaurant (uit de dagplanning)
-          {id:uid(), name:'La Rôtisserie Médiévale', category:'restaurant', location:'Château de Villerouge-Termenès', notes:'Middeleeuws diner (nacht 1), 14e-eeuwse recepten.'}
+          {id:uid(), name:'Wassalon Lav\'Matic', category:'wassalon', location:'Aix-en-Provence', notes:''},
+          {id:uid(), name:'Boulangerie du coin', category:'bakker', location:'Aix-en-Provence', notes:'verse croissants \'s ochtends'}
         ],
         items:[
-          // Dag 1 — Zaterdag 15 augustus: aankomst & installatie
-          {id:uid(), title:'Aankomst & installatie in het huis', category:'🚌', day:0, startTime:'14:00', done:false, locked:false, location:'Fabrezan', notes:'Aankomst in de namiddag, kamers verdelen.'},
-          {id:uid(), title:'Eerste weekboodschappen', category:'🛍️', day:0, startTime:'16:30', done:false, locked:false, location:'E.Leclerc Lézignan-Corbières', notes:'Met 2 à 3 wagens naar E.Leclerc of Carrefour Market in Lézignan-Corbières (8-10 min) voor de eerste grote weekboodschappen.'},
-          {id:uid(), title:'Wandeling langs de Orbieu', category:'🎯', day:0, startTime:'18:00', done:false, locked:false, location:'Rivier de Orbieu, Fabrezan', notes:'Rustige, vlakke wandeling langs de rivier.'},
-
-          // Dag 2 — Zondag 16 augustus: Cité de Carcassonne
-          {id:uid(), title:'Cité de Carcassonne', category:'🎯', day:1, startTime:'10:00', done:false, locked:false, location:'Cité de Carcassonne', notes:'~30 min met de auto. Parkeer op Parking P1 Cité (met mindervalidenplaatsen). De hoofdstraat en binnenplaats zijn vlak — goed toegankelijk voor wie moeilijk ter been is en comfortabel voor kinderwagens.'},
-          {id:uid(), title:'Zwembad & uitrusten', category:'🎯', day:1, startTime:'15:00', done:false, locked:false, location:'Fabrezan', notes:'Terug naar het huis om van het zwembad te genieten en uit te rusten.'},
-
-          // Dag 3 — Maandag 17 augustus: Château de Villerouge-Termenès + diner nacht 1
-          {id:uid(), title:'Château de Villerouge-Termenès', category:'🎯', day:2, startTime:'10:00', done:false, locked:false, location:'Château de Villerouge-Termenès', notes:'~25 min met de auto. Kasteel in een vlak dal, met toegankelijke binnenplaats en aangepaste audiovisuele tentoonstelling.'},
-          {id:uid(), title:'Diner buiten (nacht 1) — La Rôtisserie Médiévale', category:'🍽️', day:2, startTime:'19:30', done:false, locked:true, location:'La Rôtisserie Médiévale, Villerouge-Termenès', notes:'Dineren in het kasteel zelf: middeleeuwse maaltijden geïnspireerd op 14e-eeuwse recepten. Best op voorhand reserveren.'},
-
-          // Dag 4 — Dinsdag 18 augustus: stranddag Gruissan
-          {id:uid(), title:'Stranddag Gruissan — Plage des Chalets', category:'🎯', day:3, startTime:'10:00', done:false, locked:false, location:'Plage des Chalets, Gruissan', notes:'~35 min met de auto. Grote gratis parking, houten vlonders over het zand. Zeer ondiep en rustig water — ideaal voor de kinderen van 3 en 5 jaar.'},
-          {id:uid(), title:'IJsje bij Tam Tam Glacier', category:'🍽️', day:3, startTime:'16:30', done:false, locked:false, location:'Tam Tam Glacier, haven van Gruissan', notes:'Stop in de haven voor de terugrit.'},
-
-          // Dag 5 — Woensdag 19 augustus: Abbaye de Fontfroide + Lagrasse
-          {id:uid(), title:'Abbaye de Fontfroide', category:'🎯', day:4, startTime:'10:00', done:false, locked:false, location:'Abbaye de Fontfroide', notes:'~20 min met de auto. Indrukwekkend en koel complex omgeven door bossen. De begane grond is vlak en zonder steile trappen.'},
-          {id:uid(), title:'Dorp Lagrasse', category:'🎯', day:4, startTime:'14:00', done:false, locked:false, location:'Lagrasse', notes:'Middeleeuwse brug, vlakke straatjes en ambachtelijke winkeltjes.'},
-          {id:uid(), title:'IJsje bij La Fabrique de Glace', category:'🍽️', day:4, startTime:'16:00', done:false, locked:false, location:'La Fabrique de Glace, Lagrasse', notes:'In het centrum van Lagrasse.'},
-
-          // Dag 6 — Donderdag 20 augustus: fietsen langs het Canal du Midi
-          {id:uid(), title:'Fietstocht Canal du Midi (Voie Verte)', category:'🎯', day:5, startTime:'10:00', done:false, locked:false, location:'Argens-Minervois', notes:'~20 min met de auto. Traject Argens-Minervois naar Le Somail: volledig vlak, geasfalteerd fietspad zonder autoverkeer. Kinderen van 11 en 13 op eigen fiets; voor 3 en 5 jaar fietskarren of kinderzitjes huren.'},
-          {id:uid(), title:'Rust-optie: koffie of bootje in Le Somail', category:'📌', day:5, startTime:'12:30', done:false, locked:false, location:'Le Somail', notes:'Wie niet wil fietsen kan een koffie drinken of een klein elektrisch bootje zonder vaarbewijs huren om rustig over het kanaal te varen terwijl de groep langs de oever fietst.'},
-
-          // Dag 7 — Vrijdag 21 augustus: Narbonne-Plage + diner nacht 2
-          {id:uid(), title:'Narbonne-Plage — boulevard & zee', category:'🎯', day:6, startTime:'10:00', done:false, locked:false, location:'Narbonne-Plage', notes:'~35 min met de auto. Wandeling over de volledig toegankelijke boulevard en een laatste duik in zee.'},
-          {id:uid(), title:'IJsje bij Glacier Gourmand', category:'🍽️', day:6, startTime:'16:00', done:false, locked:false, location:'Glacier Gourmand, Narbonne-Plage', notes:''},
-          {id:uid(), title:'Diner buiten (nacht 2) — vis & zeevruchten', category:'🍽️', day:6, startTime:'19:30', done:false, locked:false, location:'Jachthaven Gruissan', notes:'Dineren in de jachthaven van Gruissan of in Narbonne — verse vis en zeevruchten.'},
-
-          // Dag 8 — Zaterdag 22 augustus: vertrek
-          {id:uid(), title:'Vertrek — inpakken & uitchecken', category:'🚌', day:7, startTime:'10:00', done:false, locked:false, location:'Fabrezan', notes:'Bagage inpakken, uitchecken en terugreis.'}
+          {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
         ],
         templateState:emptyTemplateState()
       }
     ]
   };
+}
+
+// --- Eenmalige injectie: Frankrijk-planning (Fabrezan, 15-22 aug 2026) ---
+// Deze data hoort enkel in de live (Supabase) planner, niet in de standaard-
+// seed. Ze wordt één keer in bestaande data gemerged en daarna stilgezet met
+// de vlag _franceAug2026Seeded. Verse installaties dragen die vlag al (zie
+// defaultState) en slaan de injectie dus over.
+function franceAug2026Places(){
+  return [
+    {name:'Le Fournil des Corbières', category:'bakker', location:'Lézignan-Corbières', notes:'⭐ 4,8/5 · 8 min. Meest aanbevolen voor ambachtelijke croissants en chocoladebroodjes met roomboter.'},
+    {name:'Boulangerie Campaillette AMELISE', category:'bakker', location:'Lézignan-Corbières', notes:'⭐ 4,4/5 · 7 min. Uitstekend traditioneel stokbrood (Campaillette) en gemakkelijk parkeren voor de deur.'},
+    {name:'Les Pains d\'Adriana', category:'bakker', location:'Lézignan-Corbières', notes:'⭐ 4,3/5 · 8 min. Elke dag open van 06:00 tot 20:00 — ideaal voor vers brood op zondagmiddag.'},
+    {name:'E.Leclerc', category:'supermarkt', location:'Lézignan-Corbières', notes:'⭐ 4,1/5 · 10 min. Zeer grote hypermarkt, ideaal voor de eerste grote weekboodschappen voor 14 personen.'},
+    {name:'Carrefour Market', category:'supermarkt', location:'Lézignan-Corbières', notes:'⭐ 3,9/5 · 8 min. Grote supermarkt met vriesvakken, babyartikelen, bazaar en een voordelig tankstation.'},
+    {name:'Lidl', category:'supermarkt', location:'Lézignan-Corbières', notes:'⭐ 4,1/5 · 7 min. Goede optie voor snelle basisboodschappen tegen een scherpe prijs.'},
+    {name:'Épicerie Vival / Dorpswinkel Fabrezan', category:'supermarkt', location:'Fabrezan (in het dorp)', notes:'⭐ 4,5/5. Handige buurtwinkel voor vergeten boodschappen zonder de auto te hoeven nemen.'},
+    {name:'Tam Tam Glacier / Au Caprice', category:'ijs', location:'Haven van Gruissan', notes:'⭐ 4,4/5. Grote variëteit aan ambachtelijke smaken nabij de jachthaven van Gruissan.'},
+    {name:'La Fabrique de Glace', category:'ijs', location:'Lagrasse centrum', notes:'⭐ 4,6/5. IJs gemaakt van lokale melk in een van de mooiste dorpen van de regio.'},
+    {name:'Glacier Gourmand', category:'ijs', location:'Narbonne-Plage', notes:'⭐ 4,1/5. Aan de boulevard, ideaal voor een ambachtelijk ijsje of pannenkoek na het strand.'},
+    {name:'La Rôtisserie Médiévale', category:'restaurant', location:'Château de Villerouge-Termenès', notes:'Middeleeuws diner (nacht 1), 14e-eeuwse recepten.'}
+  ].map(p => Object.assign({id:uid()}, p));
+}
+function franceAug2026Items(){
+  return [
+    {title:'Aankomst & installatie in het huis', category:'🚌', day:0, startTime:'14:00', location:'Fabrezan', notes:'Aankomst in de namiddag, kamers verdelen.'},
+    {title:'Eerste weekboodschappen', category:'🛍️', day:0, startTime:'16:30', location:'E.Leclerc Lézignan-Corbières', notes:'Met 2 à 3 wagens naar E.Leclerc of Carrefour Market in Lézignan-Corbières (8-10 min) voor de eerste grote weekboodschappen.'},
+    {title:'Wandeling langs de Orbieu', category:'🎯', day:0, startTime:'18:00', location:'Rivier de Orbieu, Fabrezan', notes:'Rustige, vlakke wandeling langs de rivier.'},
+    {title:'Cité de Carcassonne', category:'🎯', day:1, startTime:'10:00', location:'Cité de Carcassonne', notes:'~30 min met de auto. Parkeer op Parking P1 Cité (met mindervalidenplaatsen). De hoofdstraat en binnenplaats zijn vlak — goed toegankelijk voor wie moeilijk ter been is en comfortabel voor kinderwagens.'},
+    {title:'Zwembad & uitrusten', category:'🎯', day:1, startTime:'15:00', location:'Fabrezan', notes:'Terug naar het huis om van het zwembad te genieten en uit te rusten.'},
+    {title:'Château de Villerouge-Termenès', category:'🎯', day:2, startTime:'10:00', location:'Château de Villerouge-Termenès', notes:'~25 min met de auto. Kasteel in een vlak dal, met toegankelijke binnenplaats en aangepaste audiovisuele tentoonstelling.'},
+    {title:'Diner buiten (nacht 1) — La Rôtisserie Médiévale', category:'🍽️', day:2, startTime:'19:30', locked:true, location:'La Rôtisserie Médiévale, Villerouge-Termenès', notes:'Dineren in het kasteel zelf: middeleeuwse maaltijden geïnspireerd op 14e-eeuwse recepten. Best op voorhand reserveren.'},
+    {title:'Stranddag Gruissan — Plage des Chalets', category:'🎯', day:3, startTime:'10:00', location:'Plage des Chalets, Gruissan', notes:'~35 min met de auto. Grote gratis parking, houten vlonders over het zand. Zeer ondiep en rustig water — ideaal voor de kinderen van 3 en 5 jaar.'},
+    {title:'IJsje bij Tam Tam Glacier', category:'🍽️', day:3, startTime:'16:30', location:'Tam Tam Glacier, haven van Gruissan', notes:'Stop in de haven voor de terugrit.'},
+    {title:'Abbaye de Fontfroide', category:'🎯', day:4, startTime:'10:00', location:'Abbaye de Fontfroide', notes:'~20 min met de auto. Indrukwekkend en koel complex omgeven door bossen. De begane grond is vlak en zonder steile trappen.'},
+    {title:'Dorp Lagrasse', category:'🎯', day:4, startTime:'14:00', location:'Lagrasse', notes:'Middeleeuwse brug, vlakke straatjes en ambachtelijke winkeltjes.'},
+    {title:'IJsje bij La Fabrique de Glace', category:'🍽️', day:4, startTime:'16:00', location:'La Fabrique de Glace, Lagrasse', notes:'In het centrum van Lagrasse.'},
+    {title:'Fietstocht Canal du Midi (Voie Verte)', category:'🎯', day:5, startTime:'10:00', location:'Argens-Minervois', notes:'~20 min met de auto. Traject Argens-Minervois naar Le Somail: volledig vlak, geasfalteerd fietspad zonder autoverkeer. Kinderen van 11 en 13 op eigen fiets; voor 3 en 5 jaar fietskarren of kinderzitjes huren.'},
+    {title:'Rust-optie: koffie of bootje in Le Somail', category:'📌', day:5, startTime:'12:30', location:'Le Somail', notes:'Wie niet wil fietsen kan een koffie drinken of een klein elektrisch bootje zonder vaarbewijs huren om rustig over het kanaal te varen terwijl de groep langs de oever fietst.'},
+    {title:'Narbonne-Plage — boulevard & zee', category:'🎯', day:6, startTime:'10:00', location:'Narbonne-Plage', notes:'~35 min met de auto. Wandeling over de volledig toegankelijke boulevard en een laatste duik in zee.'},
+    {title:'IJsje bij Glacier Gourmand', category:'🍽️', day:6, startTime:'16:00', location:'Glacier Gourmand, Narbonne-Plage', notes:''},
+    {title:'Diner buiten (nacht 2) — vis & zeevruchten', category:'🍽️', day:6, startTime:'19:30', location:'Jachthaven Gruissan', notes:'Dineren in de jachthaven van Gruissan of in Narbonne — verse vis en zeevruchten.'},
+    {title:'Vertrek — inpakken & uitchecken', category:'🚌', day:7, startTime:'10:00', location:'Fabrezan', notes:'Bagage inpakken, uitchecken en terugreis.'}
+  ].map(it => Object.assign({id:uid(), done:false, locked:false, endTime:''}, it));
+}
+function migrateFranceAug2026(s){
+  if(!s || !s.trips) return s;
+  if(s._franceAug2026Seeded) return s;
+  let trip = s.trips.find(t => t.emoji==='🇫🇷' || /frankrijk/i.test(t.name||''));
+  const places = franceAug2026Places();
+  const items = franceAug2026Items();
+  if(trip){
+    trip.startDate = '2026-08-15';
+    trip.endDate = '2026-08-22';
+    trip.transport = trip.transport || '🚗 Auto';
+    trip.notes = 'Verblijf in Fabrezan (Corbières, Aude). Dag-tot-dag planning opgesteld door iemand anders. Toegankelijk gekozen voor wie moeilijk ter been is en voor kinderen (3, 5, 11 en 13 jaar).';
+    trip.places = places;
+    trip.items = items;
+  } else {
+    s.trips.push({
+      id:uid(), name:'Zuid-Frankrijk', emoji:'🇫🇷', transport:'🚗 Auto',
+      startDate:'2026-08-15', endDate:'2026-08-22',
+      notes:'Verblijf in Fabrezan (Corbières, Aude). Dag-tot-dag planning opgesteld door iemand anders.',
+      packing:[], prep:[], places, items,
+      templateState:emptyTemplateState()
+    });
+  }
+  s._franceAug2026Seeded = true;
+  return s;
 }
 
 // Oude vorm ({greece:{...}, france:{...}} met duration) omzetten naar de trips-lijst.
@@ -978,6 +997,9 @@ function migrateTemplate(s){
     s.trips.forEach(t=>{ (t.packing||[]).forEach(it=>{ if(it.cat==null) it.cat = guessCategory(it.text); }); });
     s._catSeeded = true;
   }
+
+  // Eénmalig: Frankrijk-planning (Fabrezan, 15-22 aug 2026) in bestaande data.
+  migrateFranceAug2026(s);
   return s;
 }
 
@@ -1068,7 +1090,7 @@ async function loadState(){
     } else {
       // Push terug bij een schema-migratie (oude vorm, nog geen algemene
       // lijst, of nog geen automatische categorieën).
-      const needsMigration = !remote.trips || !remote.template || !remote._catSeeded;
+      const needsMigration = !remote.trips || !remote.template || !remote._catSeeded || !remote._franceAug2026Seeded;
       state = migrateState(remote);
       writeLocalCache();
       if(needsMigration) await pushLocal(key);
