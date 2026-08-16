@@ -110,7 +110,8 @@
   section.panel.collapsed .mini-add,
   section.panel.collapsed .add-opts,
   section.panel.collapsed .add-scope,
-  section.panel.collapsed .add-place-btn{display:none;}
+  section.panel.collapsed .add-place-btn,
+  section.panel.collapsed .shop-foot{display:none;}
   .panel-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
   .panel-item{
     display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 8px; border-radius:8px;
@@ -297,6 +298,11 @@
   .btn-primary{background:var(--accent-color, var(--gr-accent)); color:white;}
   .btn-danger{background:#fdeeec; color:#b0473f; margin-right:auto;}
   .check-row{display:flex; align-items:center; gap:8px; font-size:13px;}
+  .sect-opts{display:grid; grid-template-columns:1fr 1fr; gap:6px 12px;}
+  .sect-opts .check-row{font-size:12.5px;}
+  .sect-opts input{width:15px; height:15px; flex:none; accent-color:var(--gr-accent);}
+  @media (max-width:420px){ .sect-opts{grid-template-columns:1fr;} }
+  .sect-hint{font-size:11.5px; color:#8a8175; margin-top:7px; line-height:1.4;}
 
   .save-note{position:fixed; bottom:14px; right:18px; font-size:11px; color:#a89f92; opacity:0; transition:opacity .3s;}
   .save-note.show{opacity:1;}
@@ -418,6 +424,36 @@
   .places-empty{font-size:12px; color:#b0a89b; text-align:center; margin:14px 0 4px;}
   .modal select optgroup{font-style:normal; font-weight:700;}
 
+  /* ---- boodschappenlijstje ---- */
+  /* Wie het item toevoegde staat als klein labeltje voor de tekst, zodat je
+     in een gedeelde planner ziet van wie een boodschap komt. */
+  .who-tag{
+    font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+    color:#7a7266; background:var(--paper-dim); border-radius:999px; padding:2px 7px;
+    white-space:nowrap; flex:none; max-width:38%; overflow:hidden; text-overflow:ellipsis;
+  }
+  .shop-foot{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    margin-top:10px; padding-top:9px; border-top:1px solid var(--line);
+    font-size:11.5px; color:#8a8175;
+  }
+  .shop-me{
+    border:1px dashed var(--line); background:none; border-radius:999px;
+    padding:3px 10px; cursor:pointer; font-family:'Inter'; font-size:11.5px;
+    color:var(--ink); font-weight:600;
+  }
+  @media (hover:hover){ .shop-me:hover{border-color:#b0a89b; background:var(--paper-dim);} }
+  .shop-me-edit{
+    border:1px solid var(--accent-color, var(--gr-accent)); border-radius:999px;
+    padding:3px 9px; font-size:12px; font-family:'Inter'; max-width:170px;
+  }
+  .shop-clear{
+    margin-left:auto; border:none; background:none; cursor:pointer; font-family:'Inter';
+    font-size:11.5px; font-weight:600; color:var(--accent-color, var(--gr-accent));
+    padding:3px 6px; border-radius:6px;
+  }
+  @media (hover:hover){ .shop-clear:hover{background:var(--paper-dim);} }
+
   /* ---- secties & onderbalk ---- */
   /* Op desktop staat alles naast/onder elkaar en is de onderbalk verborgen.
      Op gsm toont de app één sectie tegelijk; met de vaste icoontjesbalk
@@ -425,10 +461,14 @@
   .bottom-nav{display:none;}
   @media (max-width:880px){
     .view{display:none !important;}
-    body[data-section="board"]   .view[data-view="board"],
-    body[data-section="packing"] .view[data-view="packing"],
-    body[data-section="prep"]    .view[data-view="prep"],
-    body[data-section="places"]  .view[data-view="places"]{display:block !important;}
+    body[data-section="board"]    .view[data-view="board"],
+    body[data-section="packing"]  .view[data-view="packing"],
+    body[data-section="prep"]     .view[data-view="prep"],
+    body[data-section="places"]   .view[data-view="places"],
+    body[data-section="shopping"] .view[data-view="shopping"]{display:block !important;}
+    /* Een sectie die voor deze vakantie uitgezet is, blijft altijd verborgen —
+       specifieker dan de regel hierboven, zodat die nooit wint. */
+    body[data-section] .view[data-view][hidden]{display:none !important;}
 
     body{padding-bottom:calc(70px + env(safe-area-inset-bottom));}
     main{padding-bottom:20px;}
@@ -447,6 +487,7 @@
     section.panel.collapsed .add-scope{display:flex;}
     section.panel.collapsed .left-out{display:flex;}
     section.panel.collapsed .add-place-btn{display:block;}
+    section.panel.collapsed .shop-foot{display:flex;}
 
     .bottom-nav{
       display:flex; position:fixed; left:0; right:0; bottom:0; z-index:45;
@@ -488,6 +529,16 @@
 
 <main>
   <div class="sidebar">
+    <section class="panel view" id="shoppingPanel" data-view="shopping">
+      <h3 onclick="onPanelHeaderClick(event,'shopping')"><span class="panel-toggle" id="shoppingToggle">▾</span> <span data-i18n="panel.shopping">🛒 Boodschappen</span> <span class="panel-count" id="shoppingCount"></span><button class="panel-import" onclick="openImportModal('shopping')" data-i18n-title="title.import" title="Lijst importeren">⬇︎</button></h3>
+      <ul class="panel-list" id="shoppingList"></ul>
+      <div class="mini-add">
+        <input type="text" id="shoppingInput" data-i18n-ph="ph.addShopping" placeholder="Boodschap toevoegen…" onkeydown="if(event.key==='Enter')addShoppingItem()">
+        <button onclick="addShoppingItem()">+</button>
+      </div>
+      <div class="shop-foot" id="shoppingFoot"></div>
+    </section>
+
     <section class="panel view" id="packingPanel" data-view="packing">
       <h3 onclick="onPanelHeaderClick(event,'packing')"><span class="panel-toggle" id="packingToggle">▾</span> <span data-i18n="panel.packing">🧳 Inpaklijst</span> <span class="panel-count" id="packingCount"></span><button class="panel-import" onclick="openImportModal('packing')" data-i18n-title="title.import" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" data-i18n-title="title.manageGeneralPacking" title="Algemene inpaklijst beheren">⚙︎</button></h3>
       <ul class="panel-list" id="packingList"></ul>
@@ -536,6 +587,7 @@
 <nav class="bottom-nav" id="bottomNav">
   <button data-section="board" onclick="setSection('board')"><span class="bn-ico">📍</span><span data-i18n="nav.day">Dag</span></button>
   <button data-section="places" onclick="setSection('places')"><span class="bn-ico">🗺️</span><span data-i18n="nav.places">Plaatsen</span></button>
+  <button data-section="shopping" onclick="setSection('shopping')"><span class="bn-ico">🛒<span class="bn-badge" id="navShoppingBadge"></span></span><span data-i18n="nav.shopping">Boodschappen</span></button>
   <button data-section="packing" onclick="setSection('packing')"><span class="bn-ico">🧳<span class="bn-badge" id="navPackingBadge"></span></span><span data-i18n="nav.packing">Inpak</span></button>
   <button data-section="prep" onclick="setSection('prep')"><span class="bn-ico">✅<span class="bn-badge" id="navPrepBadge"></span></span><span data-i18n="nav.prep">Voorbereiden</span></button>
 </nav>
@@ -654,6 +706,16 @@
       <label data-i18n="label.tripNotes">Notities / context (optioneel)</label>
       <textarea id="tripNotesInput" rows="3" data-i18n-ph="ph.tripNotes" placeholder="bv. reizen met baby, houden van natuur en lokale markten, budgetvriendelijk, regio Toscane…"></textarea>
     </div>
+    <div>
+      <label data-i18n="label.sections">Welke onderdelen tonen?</label>
+      <div class="sect-opts">
+        <label class="check-row"><input type="checkbox" id="sectShopping"> <span data-i18n="panel.shopping">🛒 Boodschappen</span></label>
+        <label class="check-row"><input type="checkbox" id="sectPlaces"> <span data-i18n="panel.places">🗺️ Nuttige plaatsen</span></label>
+        <label class="check-row"><input type="checkbox" id="sectPacking"> <span data-i18n="panel.packing">🧳 Inpaklijst</span></label>
+        <label class="check-row"><input type="checkbox" id="sectPrep"> <span data-i18n="panel.prep">✅ Voor te bereiden</span></label>
+      </div>
+      <div class="sect-hint" data-i18n="hint.sections">Geldt enkel voor deze vakantie — handig om in een gedeelde planner te verbergen wat je niet samen gebruikt.</div>
+    </div>
     <div class="gate-error" id="tripModalError"></div>
     <div class="modal-actions">
       <button class="btn-danger" id="tripDeleteBtn" onclick="deleteTrip()" data-i18n="btn.delete">Verwijderen</button>
@@ -683,7 +745,7 @@
     <h3 id="importModalTitle">Lijst importeren</h3>
     <p style="font-size:13px; color:#6b6459; margin:0;" data-i18n="import.intro">Plak je lijst (bv. uit een TODO-app). Vinkjes worden genegeerd, een titelregel zonder bolletje wordt overgeslagen en dubbels worden samengevoegd.</p>
     <textarea id="importInput" rows="8" data-i18n-ph="ph.import" placeholder="Vakantie&#10;◯ Babyfoon&#10;◯ Modem&#10;✔ Paspoort&#10;…"></textarea>
-    <div>
+    <div id="importScopeRow">
       <label data-i18n="label.importTo">Toevoegen aan</label>
       <select id="importScope">
         <option value="trip" data-i18n="import.scope.trip">Deze vakantie</option>
@@ -784,6 +846,7 @@ nl:{
   'panel.packing':'🧳 Inpaklijst',
   'panel.prep':'✅ Voor te bereiden',
   'panel.places':'🗺️ Nuttige plaatsen',
+  'panel.shopping':'🛒 Boodschappen',
   'title.import':'Lijst importeren',
   'title.manageGeneralPacking':'Algemene inpaklijst beheren',
   'title.manageGeneralPrep':'Algemene voorbereiding beheren',
@@ -803,6 +866,22 @@ nl:{
   'nav.places':'Plaatsen',
   'nav.packing':'Inpak',
   'nav.prep':'Voorbereiden',
+  'nav.shopping':'Boodschappen',
+
+  'ph.addShopping':'Boodschap toevoegen…',
+  'shopping.empty':'Lijstje is leeg — iedereen kan hier boodschappen bij zetten.',
+  'shopping.clearDone':'Afgevinkte wissen ({n})',
+  'shopping.who':'Toegevoegd als',
+  'shopping.whoUnknown':'Wie ben jij?',
+  'shopping.whoSet':'Vul je naam in',
+  'shopping.whoHint':'Enkel op dit toestel bewaard — verschijnt als labeltje bij wat jij toevoegt.',
+  'ph.whoName':'bv. Tom',
+  'flash.nameSaved':'Naam bewaard ✓',
+  'flash.shoppingCleared':'{n} afgevinkt(e) gewist ✓',
+  'modal.import.shopping':'🛒 Boodschappen importeren',
+
+  'label.sections':'Welke onderdelen tonen?',
+  'hint.sections':'Geldt enkel voor deze vakantie — handig om in een gedeelde planner te verbergen wat je niet samen gebruikt.',
 
   'label.title':'Titel',
   'label.category':'Categorie',
@@ -1002,6 +1081,7 @@ nl:{
   'status.over':'🏁 Reis is voorbij.',
   'status.unscheduled':'📋 Nog te plannen: {n} item(s)',
   'status.andMore':'  …en {n} meer',
+  'status.shopping':'🛒 Boodschappen: {n} nog te kopen',
   'status.packing':'🧳 Inpaklijst: {done}/{total} gepakt',
   'status.prep':'✅ Voorbereiding: {done}/{total} gedaan',
   'status.shareTitle':'{trip} — status',
@@ -1081,6 +1161,7 @@ es:{
   'panel.packing':'🧳 Lista de equipaje',
   'panel.prep':'✅ Por preparar',
   'panel.places':'🗺️ Lugares útiles',
+  'panel.shopping':'🛒 Compras',
   'title.import':'Importar lista',
   'title.manageGeneralPacking':'Gestionar la lista de equipaje general',
   'title.manageGeneralPrep':'Gestionar la preparación general',
@@ -1100,6 +1181,22 @@ es:{
   'nav.places':'Lugares',
   'nav.packing':'Equipaje',
   'nav.prep':'Preparar',
+  'nav.shopping':'Compras',
+
+  'ph.addShopping':'Añadir a la compra…',
+  'shopping.empty':'La lista está vacía — cualquiera puede añadir cosas aquí.',
+  'shopping.clearDone':'Borrar lo marcado ({n})',
+  'shopping.who':'Añadido como',
+  'shopping.whoUnknown':'¿Quién eres?',
+  'shopping.whoSet':'Escribe tu nombre',
+  'shopping.whoHint':'Solo se guarda en este dispositivo — aparece como etiqueta en lo que tú añades.',
+  'ph.whoName':'p. ej. Tom',
+  'flash.nameSaved':'Nombre guardado ✓',
+  'flash.shoppingCleared':'{n} marcado(s) borrado(s) ✓',
+  'modal.import.shopping':'🛒 Importar lista de la compra',
+
+  'label.sections':'¿Qué secciones mostrar?',
+  'hint.sections':'Solo se aplica a estas vacaciones — útil para ocultar en un planificador compartido lo que no usáis juntos.',
 
   'label.title':'Título',
   'label.category':'Categoría',
@@ -1299,6 +1396,7 @@ es:{
   'status.over':'🏁 El viaje ha terminado.',
   'status.unscheduled':'📋 Por planificar: {n} elemento(s)',
   'status.andMore':'  …y {n} más',
+  'status.shopping':'🛒 Compras: {n} por comprar',
   'status.packing':'🧳 Equipaje: {done}/{total} preparado',
   'status.prep':'✅ Preparación: {done}/{total} hecho',
   'status.shareTitle':'{trip} — estado',
@@ -1692,6 +1790,7 @@ function migrateTemplate(s){
     trip.packing = Array.isArray(trip.packing) ? trip.packing : [];
     trip.prep = Array.isArray(trip.prep) ? trip.prep : [];
     trip.places = Array.isArray(trip.places) ? trip.places : [];
+    trip.shopping = Array.isArray(trip.shopping) ? trip.shopping : [];
     trip.templateState = trip.templateState || emptyTemplateState();
     ['packing','prep'].forEach(k=>{
       trip.templateState[k] = trip.templateState[k] || {done:{}, skip:{}};
@@ -1969,6 +2068,8 @@ function renderAll(){
     document.getElementById('packingList').innerHTML = '';
     document.getElementById('prepList').innerHTML = '';
     document.getElementById('placesList').innerHTML = '';
+    document.getElementById('shoppingList').innerHTML = '';
+    document.getElementById('shoppingFoot').innerHTML = '';
     document.getElementById('board').innerHTML = '';
     refreshNav();
     return;
@@ -1977,6 +2078,7 @@ function renderAll(){
   const pal = tripPalette(trip);
   document.getElementById('packingPanel').style.setProperty('--accent-color', pal.accent);
   document.getElementById('prepPanel').style.setProperty('--accent-color', pal.accent);
+  document.getElementById('shoppingPanel').style.setProperty('--accent-color', pal.accent);
   const board = document.getElementById('board');
   board.style.setProperty('--accent-color', pal.accent);
   board.style.setProperty('--wash-color', pal.wash);
@@ -1988,6 +2090,7 @@ function renderAll(){
   renderChecklist('packing');
   renderChecklist('prep');
   renderPlaces();
+  renderShopping();
   renderBoard();
   refreshNav();
 }
@@ -2142,9 +2245,10 @@ function togglePanel(kind){
   applyPanelCollapse(kind);
 }
 const PANEL_IDS = {
-  packing:{panel:'packingPanel', toggle:'packingToggle', count:'packingCount'},
-  prep:   {panel:'prepPanel',    toggle:'prepToggle',    count:'prepCount'},
-  places: {panel:'placesPanel',  toggle:'placesToggle',  count:'placesCount'}
+  packing: {panel:'packingPanel',  toggle:'packingToggle',  count:'packingCount'},
+  prep:    {panel:'prepPanel',     toggle:'prepToggle',     count:'prepCount'},
+  places:  {panel:'placesPanel',   toggle:'placesToggle',   count:'placesCount'},
+  shopping:{panel:'shoppingPanel', toggle:'shoppingToggle', count:'shoppingCount'}
 };
 function applyPanelCollapse(kind){
   const trip = getTrip();
@@ -2163,6 +2267,10 @@ function applyPanelCollapse(kind){
   if(kind==='places'){
     const n = (trip.places||[]).length;
     cnt.textContent = n ? String(n) : '';
+  } else if(kind==='shopping'){
+    const list = trip.shopping || [];
+    const done = list.filter(x=>x.done).length;
+    cnt.textContent = list.length ? `${done}/${list.length}` : '';
   } else {
     const {general, extras} = effectiveList(trip, kind);
     const items = general.concat(extras);
@@ -2452,6 +2560,162 @@ function deletePlaceFromModal(){
   refreshNav();
 }
 
+/* ---- boodschappenlijstje ----
+   Eén gedeelde lijst per vakantie: iedereen die de planner opent, schrijft in
+   dezelfde lijst. Wie een item toevoegde staat als labeltje bij het item; die
+   naam is een voorkeur per toestel (net als de taal) en wordt niet meegesynct.
+   Afgevinkte items zakken naar onder en kan je in één keer wissen. */
+const WHO_KEY = 'vakantie-planner-who';
+function getWhoName(){
+  try{ return (localStorage.getItem(WHO_KEY) || '').trim(); }catch(e){ return ''; }
+}
+function setWhoName(name){
+  const clean = (name || '').trim().slice(0, 24);
+  try{
+    if(clean) localStorage.setItem(WHO_KEY, clean);
+    else localStorage.removeItem(WHO_KEY);
+  }catch(e){}
+  return clean;
+}
+
+let editingShoppingId = null;
+let editingWho = false;
+
+function shoppingList(){
+  const trip = getTrip();
+  if(!trip) return [];
+  if(!Array.isArray(trip.shopping)) trip.shopping = [];
+  return trip.shopping;
+}
+
+function shoppingItemHtml(it){
+  const editing = editingShoppingId === it.id;
+  const textEl = editing
+    ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
+         onkeydown="onShoppingRenameKey(event,'${it.id}')"
+         onblur="commitShoppingRename('${it.id}',this.value)">`
+    : `<span class="pi-text" title="${escapeAttr(t('checklist.renameHint'))}" onclick="startShoppingRename('${it.id}')">${escapeHtml(it.text)}</span>`;
+  const who = (it.who || '').trim();
+  const whoEl = (!editing && who) ? `<span class="who-tag" title="${escapeAttr(who)}">${escapeHtml(who)}</span>` : '';
+  return `<li class="panel-item${it.done?' done':''}">
+    <input type="checkbox" ${it.done?'checked':''} onchange="toggleShopping('${it.id}')">
+    ${textEl}
+    ${whoEl}
+    <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeShopping('${it.id}')">${pendingDeleteId===it.id?escapeHtml(t('confirm.sure')):'✕'}</button>
+  </li>`;
+}
+
+function renderShopping(){
+  const ul = document.getElementById('shoppingList');
+  if(!ul) return;
+  const trip = getTrip();
+  ul.innerHTML = '';
+  document.getElementById('shoppingFoot').innerHTML = '';
+  if(!trip) return;
+  const items = shoppingList();
+  // Open boodschappen bovenaan (in volgorde van toevoegen), afgevinkte onderaan.
+  const open = items.filter(x=>!x.done);
+  const done = items.filter(x=>x.done);
+  ul.innerHTML = open.concat(done).map(shoppingItemHtml).join('')
+    || `<li class="empty-hint">${escapeHtml(t('shopping.empty'))}</li>`;
+  if(editingShoppingId){
+    const inp = ul.querySelector('.pi-edit');
+    if(inp){ inp.focus(); inp.select(); }
+  }
+  renderShoppingFoot(done.length);
+  applyPanelCollapse('shopping');
+}
+
+function renderShoppingFoot(doneCount){
+  const foot = document.getElementById('shoppingFoot');
+  const who = getWhoName();
+  if(editingWho){
+    foot.innerHTML = `<span>👤</span>
+      <input class="shop-me-edit" type="text" value="${escapeAttr(who)}"
+        data-i18n-ph="ph.whoName" placeholder="${escapeAttr(t('ph.whoName'))}"
+        onkeydown="onWhoKey(event)" onblur="commitWho(this.value)">`;
+    const inp = foot.querySelector('.shop-me-edit');
+    if(inp){ inp.focus(); inp.select(); }
+    return;
+  }
+  foot.innerHTML =
+    `<span>👤 ${escapeHtml(who ? t('shopping.who') : t('shopping.whoUnknown'))}</span>
+     <button class="shop-me" title="${escapeAttr(t('shopping.whoHint'))}" onclick="startWhoEdit()">${escapeHtml(who || t('shopping.whoSet'))}</button>` +
+    (doneCount > 0
+      ? `<button class="shop-clear" onclick="clearDoneShopping()">${escapeHtml(t('shopping.clearDone', {n: doneCount}))}</button>`
+      : '');
+}
+
+function startWhoEdit(){ editingWho = true; renderShoppingFoot(shoppingList().filter(x=>x.done).length); }
+function onWhoKey(e){
+  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==='Escape'){ editingWho = false; renderShopping(); }
+}
+function commitWho(value){
+  if(!editingWho) return;
+  editingWho = false;
+  const before = getWhoName();
+  const after = setWhoName(value);
+  renderShopping();
+  if(after && after !== before) flashSaved(t('flash.nameSaved'));
+}
+
+function addShoppingItem(){
+  const trip = getTrip();
+  if(!trip) return;
+  const inp = document.getElementById('shoppingInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  const item = {id:uid(), text, done:false};
+  const who = getWhoName();
+  if(who) item.who = who;
+  shoppingList().push(item);
+  inp.value = '';
+  persist();
+  renderShopping();
+  refreshNav();
+}
+function toggleShopping(id){
+  const it = shoppingList().find(x=>x.id===id);
+  if(!it) return;
+  it.done = !it.done;
+  persist();
+  renderShopping();
+  refreshNav();
+}
+function removeShopping(id){
+  if(!armDelete(id, renderShopping)) return;
+  const trip = getTrip();
+  trip.shopping = shoppingList().filter(x=>x.id!==id);
+  persist();
+  renderShopping();
+  refreshNav();
+}
+function clearDoneShopping(){
+  const trip = getTrip();
+  const before = shoppingList().length;
+  trip.shopping = shoppingList().filter(x=>!x.done);
+  const removed = before - trip.shopping.length;
+  if(!removed) return;
+  persist();
+  renderShopping();
+  refreshNav();
+  flashSaved(t('flash.shoppingCleared', {n: removed}));
+}
+function startShoppingRename(id){ editingShoppingId = id; renderShopping(); }
+function onShoppingRenameKey(e, id){
+  if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); }
+  else if(e.key==='Escape'){ editingShoppingId = null; renderShopping(); }
+}
+function commitShoppingRename(id, value){
+  if(editingShoppingId !== id) return;
+  editingShoppingId = null;
+  const text = (value || '').trim();
+  const it = shoppingList().find(x=>x.id===id);
+  if(it && text && it.text !== text){ it.text = text; persist(); }
+  renderShopping();
+}
+
 /* ---- sectie-navigatie (onderbalk op gsm) ---- */
 let activeSection = 'board';
 document.body.dataset.section = activeSection;
@@ -2461,9 +2725,39 @@ function setSection(s){
   refreshNav();
   window.scrollTo(0, 0);
 }
+// Optionele secties: per vakantie aan/uit te zetten in de instellingen. De
+// dagindeling staat er bewust niet bij — die is de kern van de planner.
+const OPTIONAL_SECTIONS = [
+  {key:'shopping', panel:'shoppingPanel', box:'sectShopping'},
+  {key:'places',   panel:'placesPanel',   box:'sectPlaces'},
+  {key:'packing',  panel:'packingPanel',  box:'sectPacking'},
+  {key:'prep',     panel:'prepPanel',     box:'sectPrep'}
+];
+// Niets ingesteld = alles zichtbaar, zodat bestaande vakanties niet veranderen.
+function sectionVisible(trip, key){
+  if(!trip) return true;
+  return !(trip.sections && trip.sections[key] === false);
+}
+// Verbergt de uitgezette panelen (desktop) en hun knop in de onderbalk (gsm).
+function applySectionVisibility(){
+  const trip = getTrip();
+  OPTIONAL_SECTIONS.forEach(s=>{
+    const on = sectionVisible(trip, s.key);
+    const panel = document.getElementById(s.panel);
+    if(panel) panel.hidden = !on;
+    const btn = document.querySelector(`.bottom-nav button[data-section="${s.key}"]`);
+    if(btn) btn.style.display = on ? '' : 'none';
+  });
+  // Stond je op een sectie die net verborgen werd? Val terug op de dagindeling.
+  if(activeSection !== 'board' && !sectionVisible(trip, activeSection)){
+    activeSection = 'board';
+    document.body.dataset.section = 'board';
+  }
+}
 function refreshNav(){
   const trip = getTrip();
   const pal = trip ? tripPalette(trip) : PALETTES[0];
+  applySectionVisibility();
   document.querySelectorAll('.bottom-nav button').forEach(b=>{
     b.classList.toggle('active', b.dataset.section===activeSection);
     b.style.setProperty('--nav-accent', pal.accent);
@@ -2474,11 +2768,12 @@ function refreshNav(){
     el.textContent = n > 0 ? String(n) : '';
     el.style.display = n > 0 ? '' : 'none';
   };
-  if(!trip){ setBadge('navPackingBadge', 0); setBadge('navPrepBadge', 0); return; }
+  if(!trip){ setBadge('navPackingBadge', 0); setBadge('navPrepBadge', 0); setBadge('navShoppingBadge', 0); return; }
   const pk = effectiveList(trip, 'packing');
   const pr = effectiveList(trip, 'prep');
   setBadge('navPackingBadge', pk.general.concat(pk.extras).filter(x=>!x.done).length);
   setBadge('navPrepBadge', pr.general.concat(pr.extras).filter(x=>!x.done).length);
+  setBadge('navShoppingBadge', (trip.shopping||[]).filter(x=>!x.done).length);
 }
 
 function fmtDate(startDate, dayOffset){
@@ -2742,6 +3037,9 @@ function openTripModal(tripId){
   document.getElementById('tripStartInput').value = trip ? trip.startDate : nextMonday();
   document.getElementById('tripEndInput').value = trip ? trip.endDate : addDays(nextMonday(),6);
   document.getElementById('tripNotesInput').value = trip ? (trip.notes||'') : '';
+  OPTIONAL_SECTIONS.forEach(s=>{
+    document.getElementById(s.box).checked = sectionVisible(trip, s.key);
+  });
   document.getElementById('tripModalError').textContent = '';
   const del = document.getElementById('tripDeleteBtn');
   del.style.display = trip ? '' : 'none';
@@ -2760,6 +3058,8 @@ function saveTrip(){
   const startDate = document.getElementById('tripStartInput').value;
   const endDate = document.getElementById('tripEndInput').value;
   const notes = document.getElementById('tripNotesInput').value.trim();
+  const sections = {};
+  OPTIONAL_SECTIONS.forEach(s=>{ sections[s.key] = document.getElementById(s.box).checked; });
   const err = document.getElementById('tripModalError');
   if(!name){ err.textContent = t('err.tripName'); return; }
   if(!startDate || !endDate){ err.textContent = t('err.tripDates'); return; }
@@ -2767,10 +3067,11 @@ function saveTrip(){
 
   let trip = editingTripId ? state.trips.find(x=>x.id===editingTripId) : null;
   if(trip){
-    Object.assign(trip, {name, emoji, transport, startDate, endDate, notes});
+    Object.assign(trip, {name, emoji, transport, startDate, endDate, notes, sections});
   } else {
     // Nieuwe vakantie erft automatisch de algemene lijst; enkel eigen extra's.
-    trip = {id:uid(), name, emoji, transport, startDate, endDate, notes, packing:[], prep:[], items:[], templateState:emptyTemplateState()};
+    trip = {id:uid(), name, emoji, transport, startDate, endDate, notes, sections,
+            packing:[], prep:[], places:[], shopping:[], items:[], templateState:emptyTemplateState()};
     state.trips.push(trip);
     currentTripId = trip.id;
   }
@@ -2940,11 +3241,12 @@ function openImportModal(kind){
   const trip = getTrip();
   if(!trip){ alert(t('alert.createTripFirst')); return; }
   importKind = kind;
-  document.getElementById('importModalTitle').textContent =
-    t(kind==='packing' ? 'modal.import.packing' : 'modal.import.prep');
+  document.getElementById('importModalTitle').textContent = t('modal.import.' + kind);
   document.getElementById('importInput').value = '';
   document.getElementById('importError').textContent = '';
   document.getElementById('importScope').value = 'trip';
+  // Het boodschappenlijstje hoort bij één vakantie; er is geen algemene versie.
+  document.getElementById('importScopeRow').hidden = (kind === 'shopping');
   document.getElementById('importModalBackdrop').classList.add('open');
 }
 function closeImportModal(){
@@ -2956,7 +3258,7 @@ function confirmImport(){
   const err = document.getElementById('importError');
   const items = parseImport(document.getElementById('importInput').value);
   if(!items.length){ err.textContent = t('err.importEmpty'); return; }
-  const scope = document.getElementById('importScope').value;
+  const scope = importKind==='shopping' ? 'trip' : document.getElementById('importScope').value;
   const trip = getTrip();
   let added = 0;
   // Inpak-items krijgen automatisch een categorie op basis van trefwoorden.
@@ -2965,7 +3267,19 @@ function confirmImport(){
     if(importKind==='packing') it.cat = guessCategory(text);
     return it;
   };
-  if(scope === 'general'){
+  if(importKind === 'shopping'){
+    const list = shoppingList();
+    const existing = new Set(list.map(x=>(x.text||'').trim().toLowerCase()));
+    const who = getWhoName();
+    items.forEach(text=>{
+      if(existing.has(text.toLowerCase())) return;
+      existing.add(text.toLowerCase());
+      const it = {id:uid(), text, done:false};
+      if(who) it.who = who;
+      list.push(it);
+      added++;
+    });
+  } else if(scope === 'general'){
     const existing = new Set((state.template[importKind]||[]).map(x=>x.text.trim().toLowerCase()));
     items.forEach(text=>{
       if(existing.has(text.toLowerCase())) return;
@@ -2984,7 +3298,7 @@ function confirmImport(){
       added++;
     });
   }
-  expandedLists[importKind] = true;
+  if(importKind !== 'shopping') expandedLists[importKind] = true;
   persist();
   closeImportModal();
   renderAll();
@@ -3133,21 +3447,37 @@ function shareStatus(){
   }
   lines.push('');
 
-  const pk = effectiveList(trip, 'packing');
-  const packItems = pk.general.concat(pk.extras);
-  const packDone = packItems.filter(p=>p.done).length;
-  lines.push(t('status.packing', {done: packDone, total: packItems.length}));
-  const packLeft = packItems.filter(p=>!p.done);
-  if(packLeft.length>0){
-    packLeft.slice(0,6).forEach(p=>lines.push(`  ⬜ ${p.text}`));
-    if(packLeft.length>6) lines.push(t('status.andMore', {n: packLeft.length-6}));
+  // Enkel de secties die op deze vakantie aanstaan, komen in de status.
+  if(sectionVisible(trip, 'shopping')){
+    const shop = trip.shopping || [];
+    const shopLeft = shop.filter(s=>!s.done);
+    if(shop.length){
+      lines.push(t('status.shopping', {n: shopLeft.length}));
+      shopLeft.slice(0,8).forEach(s=>lines.push(`  ⬜ ${s.text}${s.who?` (${s.who})`:''}`));
+      if(shopLeft.length>8) lines.push(t('status.andMore', {n: shopLeft.length-8}));
+      lines.push('');
+    }
   }
-  lines.push('');
 
-  const pr = effectiveList(trip, 'prep');
-  const prepItems = pr.general.concat(pr.extras);
-  const prepDone = prepItems.filter(p=>p.done).length;
-  lines.push(t('status.prep', {done: prepDone, total: prepItems.length}));
+  if(sectionVisible(trip, 'packing')){
+    const pk = effectiveList(trip, 'packing');
+    const packItems = pk.general.concat(pk.extras);
+    const packDone = packItems.filter(p=>p.done).length;
+    lines.push(t('status.packing', {done: packDone, total: packItems.length}));
+    const packLeft = packItems.filter(p=>!p.done);
+    if(packLeft.length>0){
+      packLeft.slice(0,6).forEach(p=>lines.push(`  ⬜ ${p.text}`));
+      if(packLeft.length>6) lines.push(t('status.andMore', {n: packLeft.length-6}));
+    }
+    lines.push('');
+  }
+
+  if(sectionVisible(trip, 'prep')){
+    const pr = effectiveList(trip, 'prep');
+    const prepItems = pr.general.concat(pr.extras);
+    const prepDone = prepItems.filter(p=>p.done).length;
+    lines.push(t('status.prep', {done: prepDone, total: prepItems.length}));
+  }
 
   const text = lines.join('\n');
 
