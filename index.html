@@ -69,6 +69,21 @@
     font-size:12px; cursor:pointer; font-family:'Inter'; color:var(--ink);
   }
 
+  /* ---- taalkeuze (Nederlands / Spaans) ---- */
+  .lang-switch{
+    display:inline-flex; border:1px solid var(--line); border-radius:999px;
+    overflow:hidden; background:white; flex:none;
+  }
+  .lang-switch button{
+    border:none; background:none; cursor:pointer; font-family:'Inter';
+    font-size:12px; font-weight:600; color:#8a8175; padding:5px 11px; line-height:1.5;
+  }
+  .lang-switch button.active{background:var(--gr-deep); color:white;}
+  @media (hover:hover){
+    .lang-switch button:not(.active):hover{background:var(--paper-dim); color:var(--ink);}
+  }
+  .gate .lang-switch{align-self:center;}
+
   main{padding:0 clamp(16px,4vw,48px) 48px; display:grid; grid-template-columns:280px 1fr; gap:28px;}
   main > div{min-width:0;}
   @media (max-width:880px){ main{grid-template-columns:1fr;} }
@@ -458,70 +473,60 @@
 
 <header>
   <div class="title-row">
-    <h1 class="display">Vakantieplanner</h1>
-    <span class="subtitle">Alles op één plek — verschuif gerust, wat vast staat blijft vast.</span>
+    <h1 class="display" data-i18n="app.title">Vakantieplanner</h1>
+    <span class="subtitle" data-i18n="app.subtitle">Alles op één plek — verschuif gerust, wat vast staat blijft vast.</span>
   </div>
   <div class="tabs" id="tabs"></div>
   <div class="trip-meta">
     <span id="tripSummary"></span>
-    <button class="meta-btn" id="tripSettingsBtn" onclick="openTripModal(currentTripId)">⚙️ Instellingen</button>
-    <button class="meta-btn" id="accountBtn" onclick="openAccountModal()" style="margin-left:auto;">👤 Account</button>
-    <button class="meta-btn" id="refreshBtn" onclick="refreshData()">🔄 Vernieuwen</button>
+    <button class="meta-btn" id="tripSettingsBtn" onclick="openTripModal(currentTripId)" data-i18n="btn.settings">⚙️ Instellingen</button>
+    <div class="lang-switch" style="margin-left:auto;"></div>
+    <button class="meta-btn" id="accountBtn" onclick="openAccountModal()" data-i18n="btn.account">👤 Account</button>
+    <button class="meta-btn" id="refreshBtn" onclick="refreshData()" data-i18n="btn.refresh">🔄 Vernieuwen</button>
   </div>
 </header>
 
 <main>
   <div class="sidebar">
     <section class="panel view" id="packingPanel" data-view="packing">
-      <h3 onclick="onPanelHeaderClick(event,'packing')"><span class="panel-toggle" id="packingToggle">▾</span> 🧳 Inpaklijst <span class="panel-count" id="packingCount"></span><button class="panel-import" onclick="openImportModal('packing')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" title="Algemene inpaklijst beheren">⚙︎</button></h3>
+      <h3 onclick="onPanelHeaderClick(event,'packing')"><span class="panel-toggle" id="packingToggle">▾</span> <span data-i18n="panel.packing">🧳 Inpaklijst</span> <span class="panel-count" id="packingCount"></span><button class="panel-import" onclick="openImportModal('packing')" data-i18n-title="title.import" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('packing')" data-i18n-title="title.manageGeneralPacking" title="Algemene inpaklijst beheren">⚙︎</button></h3>
       <ul class="panel-list" id="packingList"></ul>
       <div class="left-out" id="packingLeftOut"></div>
       <div class="mini-add">
-        <input type="text" id="packingInput" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('packing')">
+        <input type="text" id="packingInput" data-i18n-ph="ph.addItem" placeholder="Item toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('packing')">
         <button onclick="addChecklistItem('packing')">+</button>
       </div>
       <div class="add-opts">
-        <select id="packingCat" title="Categorie voor nieuwe items">
-          <option value="auto">✨ Automatisch</option>
-          <option value="baby">🍼 Lorre &amp; Loes</option>
-          <option value="tech">🔌 Elektronica &amp; kabels</option>
-          <option value="toilet">🧴 Toilet &amp; gezondheid</option>
-          <option value="kleding">👕 Kleding</option>
-          <option value="slaap">🛏️ Slaap &amp; handdoeken</option>
-          <option value="eten">🍽️ Eten &amp; keuken</option>
-          <option value="ontspanning">🎒 Ontspanning</option>
-          <option value="documenten">🔑 Documenten &amp; sleutels</option>
-          <option value="overig">📦 Overig</option>
-        </select>
-        <label class="add-scope"><input type="checkbox" id="packingGeneral"> Algemeen</label>
+        <select id="packingCat" data-i18n-title="title.newItemCat" title="Categorie voor nieuwe items"></select>
+        <label class="add-scope"><input type="checkbox" id="packingGeneral"> <span data-i18n="scope.general">Algemeen</span></label>
       </div>
     </section>
 
     <section class="panel view" id="prepPanel" data-view="prep">
-      <h3 onclick="onPanelHeaderClick(event,'prep')"><span class="panel-toggle" id="prepToggle">▾</span> ✅ Voor te bereiden <span class="panel-count" id="prepCount"></span><button class="panel-import" onclick="openImportModal('prep')" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('prep')" title="Algemene voorbereiding beheren">⚙︎</button></h3>
+      <h3 onclick="onPanelHeaderClick(event,'prep')"><span class="panel-toggle" id="prepToggle">▾</span> <span data-i18n="panel.prep">✅ Voor te bereiden</span> <span class="panel-count" id="prepCount"></span><button class="panel-import" onclick="openImportModal('prep')" data-i18n-title="title.import" title="Lijst importeren">⬇︎</button><button class="panel-import" onclick="openTemplateModal('prep')" data-i18n-title="title.manageGeneralPrep" title="Algemene voorbereiding beheren">⚙︎</button></h3>
       <ul class="panel-list" id="prepList"></ul>
       <div class="left-out" id="prepLeftOut"></div>
       <div class="mini-add">
-        <input type="text" id="prepInput" placeholder="To-do toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('prep')">
+        <input type="text" id="prepInput" data-i18n-ph="ph.addTodo" placeholder="To-do toevoegen…" onkeydown="if(event.key==='Enter')addChecklistItem('prep')">
         <button onclick="addChecklistItem('prep')">+</button>
       </div>
-      <label class="add-scope"><input type="checkbox" id="prepGeneral"> Ook op al mijn vakanties (algemeen)</label>
+      <label class="add-scope"><input type="checkbox" id="prepGeneral"> <span data-i18n="scope.generalPrep">Ook op al mijn vakanties (algemeen)</span></label>
     </section>
 
     <section class="panel view" id="placesPanel" data-view="places">
-      <h3 onclick="onPanelHeaderClick(event,'places')"><span class="panel-toggle" id="placesToggle">▾</span> 🗺️ Nuttige plaatsen <span class="panel-count" id="placesCount"></span></h3>
+      <h3 onclick="onPanelHeaderClick(event,'places')"><span class="panel-toggle" id="placesToggle">▾</span> <span data-i18n="panel.places">🗺️ Nuttige plaatsen</span> <span class="panel-count" id="placesCount"></span></h3>
       <ul class="panel-list" id="placesList"></ul>
-      <button class="add-place-btn" onclick="openPlaceModal()">+ Plaats toevoegen</button>
+      <button class="add-place-btn" onclick="openPlaceModal()" data-i18n="btn.addPlace">+ Plaats toevoegen</button>
     </section>
   </div>
 
   <div class="view" id="boardSection" data-view="board">
     <div class="board-header">
-      <h3>📍 Dagindeling &amp; activiteiten</h3>
+      <h3 data-i18n="board.title">📍 Dagindeling &amp; activiteiten</h3>
       <div class="board-actions">
-        <button class="add-item-btn secondary" onclick="shareStatus()">📤 Deel status</button>
-        <button class="add-item-btn secondary" onclick="openActivityAI()">✨ AI-suggesties</button>
-        <button class="add-item-btn" onclick="openItemModal()">+ Nieuw item</button>
+        <button class="add-item-btn secondary" onclick="shareStatus()" data-i18n="btn.shareStatus">📤 Deel status</button>
+        <button class="add-item-btn secondary" onclick="openActivityAI()" data-i18n="btn.aiSuggest">✨ AI-suggesties</button>
+        <button class="add-item-btn" onclick="openItemModal()" data-i18n="btn.newItem">+ Nieuw item</button>
       </div>
     </div>
     <div class="board" id="board"></div>
@@ -529,60 +534,60 @@
 </main>
 
 <nav class="bottom-nav" id="bottomNav">
-  <button data-section="board" onclick="setSection('board')"><span class="bn-ico">📍</span>Dag</button>
-  <button data-section="places" onclick="setSection('places')"><span class="bn-ico">🗺️</span>Plaatsen</button>
-  <button data-section="packing" onclick="setSection('packing')"><span class="bn-ico">🧳<span class="bn-badge" id="navPackingBadge"></span></span>Inpak</button>
-  <button data-section="prep" onclick="setSection('prep')"><span class="bn-ico">✅<span class="bn-badge" id="navPrepBadge"></span></span>Voorbereiden</button>
+  <button data-section="board" onclick="setSection('board')"><span class="bn-ico">📍</span><span data-i18n="nav.day">Dag</span></button>
+  <button data-section="places" onclick="setSection('places')"><span class="bn-ico">🗺️</span><span data-i18n="nav.places">Plaatsen</span></button>
+  <button data-section="packing" onclick="setSection('packing')"><span class="bn-ico">🧳<span class="bn-badge" id="navPackingBadge"></span></span><span data-i18n="nav.packing">Inpak</span></button>
+  <button data-section="prep" onclick="setSection('prep')"><span class="bn-ico">✅<span class="bn-badge" id="navPrepBadge"></span></span><span data-i18n="nav.prep">Voorbereiden</span></button>
 </nav>
 
 <div class="modal-backdrop" id="modalBackdrop">
   <div class="modal">
     <h3 id="modalTitle">Nieuw item</h3>
     <div>
-      <label>Titel</label>
-      <input type="text" id="itemTitleInput" placeholder="bv. Markt in Aix-en-Provence">
+      <label data-i18n="label.title">Titel</label>
+      <input type="text" id="itemTitleInput" data-i18n-ph="ph.itemTitle" placeholder="bv. Markt in Aix-en-Provence">
     </div>
     <div class="row">
       <div>
-        <label>Categorie</label>
+        <label data-i18n="label.category">Categorie</label>
         <select id="itemCategoryInput">
-          <option value="🎯">🎯 Activiteit</option>
-          <option value="🍽️">🍽️ Eten</option>
-          <option value="🚌">🚌 Vervoer</option>
-          <option value="🛍️">🛍️ Markt/winkel</option>
-          <option value="📌">📌 Overig</option>
+          <option value="🎯" data-i18n="itemcat.activity">🎯 Activiteit</option>
+          <option value="🍽️" data-i18n="itemcat.food">🍽️ Eten</option>
+          <option value="🚌" data-i18n="itemcat.transport">🚌 Vervoer</option>
+          <option value="🛍️" data-i18n="itemcat.market">🛍️ Markt/winkel</option>
+          <option value="📌" data-i18n="itemcat.other">📌 Overig</option>
         </select>
       </div>
       <div>
-        <label>Dag</label>
+        <label data-i18n="label.day">Dag</label>
         <select id="itemDayInput"></select>
       </div>
     </div>
     <div>
-      <label>Locatie of link (optioneel)</label>
-      <input type="text" id="itemLocationInput" placeholder="bv. Oude haven Chania, of een www-link">
+      <label data-i18n="label.locationOrLink">Locatie of link (optioneel)</label>
+      <input type="text" id="itemLocationInput" data-i18n-ph="ph.location" placeholder="bv. Oude haven Chania, of een www-link">
     </div>
     <div class="row">
       <div>
-        <label>Van (optioneel)</label>
+        <label data-i18n="label.from">Van (optioneel)</label>
         <input type="time" id="itemStartTimeInput">
       </div>
       <div>
-        <label>Tot (optioneel)</label>
+        <label data-i18n="label.to">Tot (optioneel)</label>
         <input type="time" id="itemEndTimeInput">
       </div>
     </div>
     <div>
-      <label>Notities (optioneel)</label>
-      <textarea id="itemNotesInput" rows="3" placeholder="bv. tickets op voorhand boeken, om 9u vertrekken…"></textarea>
+      <label data-i18n="label.notes">Notities (optioneel)</label>
+      <textarea id="itemNotesInput" rows="3" data-i18n-ph="ph.itemNotes" placeholder="bv. tickets op voorhand boeken, om 9u vertrekken…"></textarea>
     </div>
     <div class="check-row">
       <input type="checkbox" id="itemLockedInput">
-      <label style="margin:0;">Vastgezet op deze dag (bv. marktdag — kan niet zomaar verschuiven)</label>
+      <label style="margin:0;" data-i18n="label.lockedDay">Vastgezet op deze dag (bv. marktdag — kan niet zomaar verschuiven)</label>
     </div>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeItemModal()">Annuleren</button>
-      <button class="btn-primary" onclick="saveItem()">Opslaan</button>
+      <button class="btn-ghost" onclick="closeItemModal()" data-i18n="btn.cancel">Annuleren</button>
+      <button class="btn-primary" onclick="saveItem()" data-i18n="btn.save">Opslaan</button>
     </div>
   </div>
 </div>
@@ -591,25 +596,25 @@
   <div class="modal">
     <h3 id="placeModalTitle">Nieuwe plaats</h3>
     <div>
-      <label>Naam</label>
-      <input type="text" id="placeNameInput" placeholder="bv. Taverna To Karnagio">
+      <label data-i18n="label.name">Naam</label>
+      <input type="text" id="placeNameInput" data-i18n-ph="ph.placeName" placeholder="bv. Taverna To Karnagio">
     </div>
     <div>
-      <label>Type</label>
+      <label data-i18n="label.type">Type</label>
       <select id="placeCategoryInput"></select>
     </div>
     <div>
-      <label>Adres of link (optioneel)</label>
-      <input type="text" id="placeLocationInput" placeholder="bv. Oude haven Chania, of een www-link">
+      <label data-i18n="label.addressOrLink">Adres of link (optioneel)</label>
+      <input type="text" id="placeLocationInput" data-i18n-ph="ph.location" placeholder="bv. Oude haven Chania, of een www-link">
     </div>
     <div>
-      <label>Notities (optioneel)</label>
-      <textarea id="placeNotesInput" rows="2" placeholder="bv. open tot 23u, dichtstbijzijnde spoeddienst…"></textarea>
+      <label data-i18n="label.notes">Notities (optioneel)</label>
+      <textarea id="placeNotesInput" rows="2" data-i18n-ph="ph.placeNotes" placeholder="bv. open tot 23u, dichtstbijzijnde spoeddienst…"></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn-danger" id="placeDeleteBtn" onclick="deletePlaceFromModal()">Verwijderen</button>
-      <button class="btn-ghost" onclick="closePlaceModal()">Annuleren</button>
-      <button class="btn-primary" onclick="savePlace()">Opslaan</button>
+      <button class="btn-danger" id="placeDeleteBtn" onclick="deletePlaceFromModal()" data-i18n="btn.delete">Verwijderen</button>
+      <button class="btn-ghost" onclick="closePlaceModal()" data-i18n="btn.cancel">Annuleren</button>
+      <button class="btn-primary" onclick="savePlace()" data-i18n="btn.save">Opslaan</button>
     </div>
   </div>
 </div>
@@ -619,41 +624,41 @@
     <h3 id="tripModalTitle">Nieuwe vakantie</h3>
     <div class="row">
       <div style="flex:3;">
-        <label>Naam</label>
-        <input type="text" id="tripNameInput" placeholder="bv. Griekenland">
+        <label data-i18n="label.name">Naam</label>
+        <input type="text" id="tripNameInput" data-i18n-ph="ph.tripName" placeholder="bv. Griekenland">
       </div>
       <div style="flex:1;">
-        <label>Icoon</label>
+        <label data-i18n="label.icon">Icoon</label>
         <input type="text" id="tripEmojiInput" placeholder="🇬🇷" maxlength="4">
       </div>
     </div>
     <div>
-      <label>Vervoer</label>
+      <label data-i18n="label.transport">Vervoer</label>
       <select id="tripTransportInput">
-        <option value="✈️ Vliegtuig">✈️ Vliegtuig</option>
-        <option value="🚗 Auto">🚗 Auto</option>
-        <option value="🚆 Trein">🚆 Trein</option>
+        <option value="plane" data-i18n="transport.plane">✈️ Vliegtuig</option>
+        <option value="car" data-i18n="transport.car">🚗 Auto</option>
+        <option value="train" data-i18n="transport.train">🚆 Trein</option>
       </select>
     </div>
     <div class="row">
       <div>
-        <label>Startdatum</label>
+        <label data-i18n="label.startDate">Startdatum</label>
         <input type="date" id="tripStartInput">
       </div>
       <div>
-        <label>Einddatum</label>
+        <label data-i18n="label.endDate">Einddatum</label>
         <input type="date" id="tripEndInput">
       </div>
     </div>
     <div>
-      <label>Notities / context (optioneel)</label>
-      <textarea id="tripNotesInput" rows="3" placeholder="bv. reizen met baby, houden van natuur en lokale markten, budgetvriendelijk, regio Toscane…"></textarea>
+      <label data-i18n="label.tripNotes">Notities / context (optioneel)</label>
+      <textarea id="tripNotesInput" rows="3" data-i18n-ph="ph.tripNotes" placeholder="bv. reizen met baby, houden van natuur en lokale markten, budgetvriendelijk, regio Toscane…"></textarea>
     </div>
     <div class="gate-error" id="tripModalError"></div>
     <div class="modal-actions">
-      <button class="btn-danger" id="tripDeleteBtn" onclick="deleteTrip()">Verwijderen</button>
-      <button class="btn-ghost" onclick="closeTripModal()">Annuleren</button>
-      <button class="btn-primary" onclick="saveTrip()">Opslaan</button>
+      <button class="btn-danger" id="tripDeleteBtn" onclick="deleteTrip()" data-i18n="btn.delete">Verwijderen</button>
+      <button class="btn-ghost" onclick="closeTripModal()" data-i18n="btn.cancel">Annuleren</button>
+      <button class="btn-primary" onclick="saveTrip()" data-i18n="btn.save">Opslaan</button>
     </div>
   </div>
 </div>
@@ -661,14 +666,14 @@
 <div class="modal-backdrop" id="tmplModalBackdrop">
   <div class="modal">
     <h3 id="tmplModalTitle">Algemene lijst</h3>
-    <p style="font-size:13px; color:#6b6459; margin:0;">Enkel de <strong>algemene</strong> items (met het label "algemeen") staan hier — niet de items die je aan één vakantie toevoegde. Pas de categorie aan, hernoem (tik op de tekst) of verwijder (verdwijnt overal). Per vakantie kan je items apart weglaten.</p>
+    <p style="font-size:13px; color:#6b6459; margin:0;" data-i18n-html="tmpl.intro">Enkel de <strong>algemene</strong> items (met het label "algemeen") staan hier — niet de items die je aan één vakantie toevoegde. Pas de categorie aan, hernoem (tik op de tekst) of verwijder (verdwijnt overal). Per vakantie kan je items apart weglaten.</p>
     <ul class="panel-list" id="tmplList" style="max-height:55vh; overflow-y:auto; overflow-x:hidden;"></ul>
     <div class="mini-add">
-      <input type="text" id="tmplInput" placeholder="Algemeen item toevoegen…" onkeydown="if(event.key==='Enter')addTemplateItem()">
+      <input type="text" id="tmplInput" data-i18n-ph="ph.tmplAdd" placeholder="Algemeen item toevoegen…" onkeydown="if(event.key==='Enter')addTemplateItem()">
       <button onclick="addTemplateItem()">+</button>
     </div>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="closeTemplateModal()">Klaar</button>
+      <button class="btn-primary" onclick="closeTemplateModal()" data-i18n="btn.ready">Klaar</button>
     </div>
   </div>
 </div>
@@ -676,85 +681,765 @@
 <div class="modal-backdrop" id="importModalBackdrop">
   <div class="modal">
     <h3 id="importModalTitle">Lijst importeren</h3>
-    <p style="font-size:13px; color:#6b6459; margin:0;">Plak je lijst (bv. uit een TODO-app). Vinkjes worden genegeerd, een titelregel zonder bolletje wordt overgeslagen en dubbels worden samengevoegd.</p>
-    <textarea id="importInput" rows="8" placeholder="Vakantie&#10;◯ Babyfoon&#10;◯ Modem&#10;✔ Paspoort&#10;…"></textarea>
+    <p style="font-size:13px; color:#6b6459; margin:0;" data-i18n="import.intro">Plak je lijst (bv. uit een TODO-app). Vinkjes worden genegeerd, een titelregel zonder bolletje wordt overgeslagen en dubbels worden samengevoegd.</p>
+    <textarea id="importInput" rows="8" data-i18n-ph="ph.import" placeholder="Vakantie&#10;◯ Babyfoon&#10;◯ Modem&#10;✔ Paspoort&#10;…"></textarea>
     <div>
-      <label>Toevoegen aan</label>
+      <label data-i18n="label.importTo">Toevoegen aan</label>
       <select id="importScope">
-        <option value="trip">Deze vakantie</option>
-        <option value="general">Algemeen (alle vakanties)</option>
+        <option value="trip" data-i18n="import.scope.trip">Deze vakantie</option>
+        <option value="general" data-i18n="import.scope.general">Algemeen (alle vakanties)</option>
       </select>
     </div>
     <div class="gate-error" id="importError"></div>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeImportModal()">Annuleren</button>
-      <button class="btn-primary" onclick="confirmImport()">Importeren</button>
+      <button class="btn-ghost" onclick="closeImportModal()" data-i18n="btn.cancel">Annuleren</button>
+      <button class="btn-primary" onclick="confirmImport()" data-i18n="btn.import">Importeren</button>
     </div>
   </div>
 </div>
 
 <div class="modal-backdrop" id="aiModalBackdrop">
   <div class="modal" style="width:min(460px,92vw);">
-    <h3>✨ AI-suggesties voor activiteiten</h3>
-    <p style="font-size:13px; color:#6b6459; margin:0;">1. Beschrijf je vakantie. 2. Kopieer de prompt en plak die in ChatGPT of Claude. 3. Plak het antwoord hieronder terug om de activiteiten bij <strong>Nog te plannen</strong> te zetten.</p>
+    <h3 data-i18n="ai.title">✨ AI-suggesties voor activiteiten</h3>
+    <p style="font-size:13px; color:#6b6459; margin:0;" data-i18n-html="ai.intro">1. Beschrijf je vakantie. 2. Kopieer de prompt en plak die in ChatGPT of Claude. 3. Plak het antwoord hieronder terug om de activiteiten bij <strong>Nog te plannen</strong> te zetten.</p>
     <div>
-      <label>Context / notities over deze vakantie</label>
-      <textarea id="aiContextInput" rows="3" placeholder="bv. reizen met baby, natuur en lokale markten, budgetvriendelijk…"></textarea>
+      <label data-i18n="label.aiContext">Context / notities over deze vakantie</label>
+      <textarea id="aiContextInput" rows="3" data-i18n-ph="ph.aiContext" placeholder="bv. reizen met baby, natuur en lokale markten, budgetvriendelijk…"></textarea>
     </div>
     <div class="modal-actions" style="justify-content:flex-start;">
-      <button class="btn-ghost" onclick="copyActivityPrompt()">📋 Kopieer AI-prompt</button>
+      <button class="btn-ghost" onclick="copyActivityPrompt()" data-i18n="btn.copyPrompt">📋 Kopieer AI-prompt</button>
     </div>
     <div>
-      <label>Plak hier het antwoord van de AI</label>
-      <textarea id="aiResultInput" rows="6" placeholder="- 🎯 Wandeling in de calanques | Cassis | mooi in de ochtend&#10;- 🍽️ Lunch bij lokale bistro | Aix-en-Provence |&#10;…"></textarea>
+      <label data-i18n="label.aiResult">Plak hier het antwoord van de AI</label>
+      <textarea id="aiResultInput" rows="6" data-i18n-ph="ph.aiResult" placeholder="- 🎯 Wandeling in de calanques | Cassis | mooi in de ochtend&#10;- 🍽️ Lunch bij lokale bistro | Aix-en-Provence |&#10;…"></textarea>
     </div>
     <div class="gate-error" id="aiError"></div>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeActivityAI()">Sluiten</button>
-      <button class="btn-primary" onclick="addActivitySuggestions()">Toevoegen aan nog te plannen</button>
+      <button class="btn-ghost" onclick="closeActivityAI()" data-i18n="btn.close">Sluiten</button>
+      <button class="btn-primary" onclick="addActivitySuggestions()" data-i18n="btn.aiAdd">Toevoegen aan nog te plannen</button>
     </div>
   </div>
 </div>
 
 <div class="gate-backdrop" id="gateBackdrop">
   <div class="gate">
-    <h2 class="display">Vakantieplanner</h2>
-    <p>Voer de toegangscode in om de planner te openen.</p>
-    <input type="password" id="gateInput" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')submitGate()">
+    <h2 class="display" data-i18n="app.title">Vakantieplanner</h2>
+    <p data-i18n="gate.intro">Voer de toegangscode in om de planner te openen.</p>
+    <input type="password" id="gateInput" data-i18n-ph="ph.accessCode" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')submitGate()">
     <div class="gate-error" id="gateError"></div>
-    <button onclick="submitGate()">Openen</button>
+    <button onclick="submitGate()" data-i18n="btn.open">Openen</button>
+    <div class="lang-switch"></div>
   </div>
 </div>
 
 <div class="gate-backdrop" id="accountBackdrop" style="background:rgba(30,25,20,.4);">
   <div class="gate" style="text-align:left;">
-    <h2 class="display" style="text-align:center;">Account wisselen</h2>
-    <p style="text-align:center;">Kies met welke toegangscode je de planner opent. Zo kan je vlot switchen tussen je privé-planner en een gedeelde reisplanner.</p>
+    <h2 class="display" style="text-align:center;" data-i18n="account.title">Account wisselen</h2>
+    <p style="text-align:center;" data-i18n="account.intro">Kies met welke toegangscode je de planner opent. Zo kan je vlot switchen tussen je privé-planner en een gedeelde reisplanner.</p>
     <div class="acc-list" id="accList"></div>
     <div class="acc-divider"></div>
-    <div class="acc-add-label">Andere toegangscode toevoegen</div>
-    <input type="text" id="accLabelInput" placeholder="Naam (bv. Frankrijk gedeeld)" style="text-align:left;">
-    <input type="password" id="accKeyInput" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')addAccountFromModal()" style="text-align:left;">
+    <div class="acc-add-label" data-i18n="account.addLabel">Andere toegangscode toevoegen</div>
+    <input type="text" id="accLabelInput" data-i18n-ph="ph.accLabel" placeholder="Naam (bv. Frankrijk gedeeld)" style="text-align:left;">
+    <input type="password" id="accKeyInput" data-i18n-ph="ph.accessCode" placeholder="Toegangscode" onkeydown="if(event.key==='Enter')addAccountFromModal()" style="text-align:left;">
     <div class="gate-error" id="accountError"></div>
-    <button onclick="addAccountFromModal()">Toevoegen &amp; openen</button>
-    <button class="ghost" onclick="openInstallGuide()">📲 Op beginscherm zetten (uitleg)</button>
-    <button class="ghost" onclick="closeAccountModal()">Sluiten</button>
+    <button onclick="addAccountFromModal()" data-i18n="btn.addAndOpen">Toevoegen &amp; openen</button>
+    <button class="ghost" onclick="openInstallGuide()" data-i18n="btn.installGuide">📲 Op beginscherm zetten (uitleg)</button>
+    <button class="ghost" onclick="closeAccountModal()" data-i18n="btn.close">Sluiten</button>
   </div>
 </div>
 
 <div class="gate-backdrop" id="installBackdrop" style="background:rgba(30,25,20,.4);">
   <div class="gate guide">
-    <h2 class="display">📲 Zet de planner op je beginscherm</h2>
-    <p class="guide-intro">Zo open je de vakantieplanner voortaan als een echte app — met één tik, mooi op volledig scherm.</p>
+    <h2 class="display" data-i18n="install.title">📲 Zet de planner op je beginscherm</h2>
+    <p class="guide-intro" data-i18n="install.intro">Zo open je de vakantieplanner voortaan als een echte app — met één tik, mooi op volledig scherm.</p>
     <div id="installContent"></div>
-    <button onclick="closeInstallGuide()">Begrepen</button>
+    <button onclick="closeInstallGuide()" data-i18n="btn.understood">Begrepen</button>
   </div>
 </div>
 
 <div class="save-note" id="saveNote">Opgeslagen ✓</div>
-<div class="offline-note" id="offlineNote">📴 Offline — wijzigingen worden gesynct zodra je terug online bent</div>
+<div class="offline-note" id="offlineNote" data-i18n="offline.note">📴 Offline — wijzigingen worden gesynct zodra je terug online bent</div>
 
 <script>
+/* =====================================================================
+   Meertaligheid — Nederlands / Spaans
+   De taal is een voorkeur per toestel (localStorage), niet iets dat
+   meegesynct wordt: een gedeelde planner kan zo door een Nederlandstalige
+   én een Spaanstalige tegelijk gebruikt worden.
+   ===================================================================== */
+const LANG_KEY = 'vakantie-planner-lang';
+const LANGS = {
+  nl:{label:'NL', name:'Nederlands', locale:'nl-BE'},
+  es:{label:'ES', name:'Español',    locale:'es-ES'}
+};
+
+const I18N = {
+nl:{
+  'app.title':'Vakantieplanner',
+  'app.subtitle':'Alles op één plek — verschuif gerust, wat vast staat blijft vast.',
+  'btn.settings':'⚙️ Instellingen',
+  'btn.account':'👤 Account',
+  'btn.refresh':'🔄 Vernieuwen',
+
+  'panel.packing':'🧳 Inpaklijst',
+  'panel.prep':'✅ Voor te bereiden',
+  'panel.places':'🗺️ Nuttige plaatsen',
+  'title.import':'Lijst importeren',
+  'title.manageGeneralPacking':'Algemene inpaklijst beheren',
+  'title.manageGeneralPrep':'Algemene voorbereiding beheren',
+  'title.newItemCat':'Categorie voor nieuwe items',
+  'ph.addItem':'Item toevoegen…',
+  'ph.addTodo':'To-do toevoegen…',
+  'cat.auto':'✨ Automatisch',
+  'scope.general':'Algemeen',
+  'scope.generalPrep':'Ook op al mijn vakanties (algemeen)',
+  'btn.addPlace':'+ Plaats toevoegen',
+
+  'board.title':'📍 Dagindeling & activiteiten',
+  'btn.shareStatus':'📤 Deel status',
+  'btn.aiSuggest':'✨ AI-suggesties',
+  'btn.newItem':'+ Nieuw item',
+  'nav.day':'Dag',
+  'nav.places':'Plaatsen',
+  'nav.packing':'Inpak',
+  'nav.prep':'Voorbereiden',
+
+  'label.title':'Titel',
+  'label.category':'Categorie',
+  'label.day':'Dag',
+  'label.name':'Naam',
+  'label.type':'Type',
+  'label.icon':'Icoon',
+  'label.transport':'Vervoer',
+  'label.startDate':'Startdatum',
+  'label.endDate':'Einddatum',
+  'label.locationOrLink':'Locatie of link (optioneel)',
+  'label.addressOrLink':'Adres of link (optioneel)',
+  'label.from':'Van (optioneel)',
+  'label.to':'Tot (optioneel)',
+  'label.notes':'Notities (optioneel)',
+  'label.tripNotes':'Notities / context (optioneel)',
+  'label.lockedDay':'Vastgezet op deze dag (bv. marktdag — kan niet zomaar verschuiven)',
+  'label.importTo':'Toevoegen aan',
+  'label.aiContext':'Context / notities over deze vakantie',
+  'label.aiResult':'Plak hier het antwoord van de AI',
+
+  'ph.itemTitle':'bv. Markt in Aix-en-Provence',
+  'ph.location':'bv. Oude haven Chania, of een www-link',
+  'ph.itemNotes':'bv. tickets op voorhand boeken, om 9u vertrekken…',
+  'ph.placeName':'bv. Taverna To Karnagio',
+  'ph.placeNotes':'bv. open tot 23u, dichtstbijzijnde spoeddienst…',
+  'ph.tripName':'bv. Griekenland',
+  'ph.tripNotes':'bv. reizen met baby, houden van natuur en lokale markten, budgetvriendelijk, regio Toscane…',
+  'ph.tmplAdd':'Algemeen item toevoegen…',
+  'ph.import':'Vakantie\n◯ Babyfoon\n◯ Modem\n✔ Paspoort\n…',
+  'ph.aiContext':'bv. reizen met baby, natuur en lokale markten, budgetvriendelijk…',
+  'ph.aiResult':'- 🎯 Wandeling in de calanques | Cassis | mooi in de ochtend\n- 🍽️ Lunch bij lokale bistro | Aix-en-Provence |\n…',
+  'ph.accessCode':'Toegangscode',
+  'ph.accLabel':'Naam (bv. Frankrijk gedeeld)',
+
+  'btn.cancel':'Annuleren',
+  'btn.save':'Opslaan',
+  'btn.delete':'Verwijderen',
+  'btn.ready':'Klaar',
+  'btn.import':'Importeren',
+  'btn.close':'Sluiten',
+  'btn.open':'Openen',
+  'btn.understood':'Begrepen',
+  'btn.copyPrompt':'📋 Kopieer AI-prompt',
+  'btn.aiAdd':'Toevoegen aan nog te plannen',
+  'btn.addAndOpen':'Toevoegen & openen',
+  'btn.installGuide':'📲 Op beginscherm zetten (uitleg)',
+  'btn.confirmDelete':'Zeker? Klik nogmaals',
+
+  'itemcat.activity':'🎯 Activiteit',
+  'itemcat.food':'🍽️ Eten',
+  'itemcat.transport':'🚌 Vervoer',
+  'itemcat.market':'🛍️ Markt/winkel',
+  'itemcat.other':'📌 Overig',
+
+  'transport.plane':'✈️ Vliegtuig',
+  'transport.car':'🚗 Auto',
+  'transport.train':'🚆 Trein',
+
+  'packcat.baby':'Lorre & Loes',
+  'packcat.tech':'Elektronica & kabels',
+  'packcat.toilet':'Toilet & gezondheid',
+  'packcat.kleding':'Kleding',
+  'packcat.slaap':'Slaap & handdoeken',
+  'packcat.eten':'Eten & keuken',
+  'packcat.ontspanning':'Ontspanning',
+  'packcat.documenten':'Documenten & sleutels',
+  'packcat.overig':'Overig',
+
+  'placegroup.eten':'Eten & drinken',
+  'placegroup.dienst':'Diensten & nood',
+  'placecat.restaurant':'Restaurant',
+  'placecat.cafe':'Café / bar',
+  'placecat.bakker':'Bakker',
+  'placecat.ijs':'IJs / dessert',
+  'placecat.supermarkt':'Supermarkt',
+  'placecat.apotheek':'Apotheek',
+  'placecat.ziekenhuis':'Ziekenhuis / spoed',
+  'placecat.dokter':'Dokter',
+  'placecat.wassalon':'Wassalon',
+  'placecat.geldautomaat':'Geldautomaat',
+  'placecat.tankstation':'Tankstation',
+  'placecat.winkel':'Winkel',
+  'placecat.overig':'Overig',
+
+  'tabs.newTrip':'+ Nieuwe vakantie',
+  'trip.none':'Nog geen vakanties — voeg er een toe.',
+  'trip.day':'dag',
+  'trip.days':'dagen',
+  'modal.item.new':'Nieuw item',
+  'modal.item.edit':'Item bewerken',
+  'modal.place.new':'Nieuwe plaats',
+  'modal.place.edit':'Plaats bewerken',
+  'modal.trip.new':'Nieuwe vakantie',
+  'modal.trip.edit':'Vakantie bewerken',
+  'modal.tmpl.packing':'🧳 Algemene inpaklijst',
+  'modal.tmpl.prep':'✅ Algemene voorbereiding',
+  'modal.import.packing':'🧳 Inpaklijst importeren',
+  'modal.import.prep':'✅ Voorbereiding importeren',
+  'tmpl.intro':'Enkel de <strong>algemene</strong> items (met het label "algemeen") staan hier — niet de items die je aan één vakantie toevoegde. Pas de categorie aan, hernoem (tik op de tekst) of verwijder (verdwijnt overal). Per vakantie kan je items apart weglaten.',
+  'import.intro':'Plak je lijst (bv. uit een TODO-app). Vinkjes worden genegeerd, een titelregel zonder bolletje wordt overgeslagen en dubbels worden samengevoegd.',
+  'import.scope.trip':'Deze vakantie',
+  'import.scope.general':'Algemeen (alle vakanties)',
+  'ai.title':'✨ AI-suggesties voor activiteiten',
+  'ai.intro':'1. Beschrijf je vakantie. 2. Kopieer de prompt en plak die in ChatGPT of Claude. 3. Plak het antwoord hieronder terug om de activiteiten bij <strong>Nog te plannen</strong> te zetten.',
+  'gate.intro':'Voer de toegangscode in om de planner te openen.',
+  'account.title':'Account wisselen',
+  'account.intro':'Kies met welke toegangscode je de planner opent. Zo kan je vlot switchen tussen je privé-planner en een gedeelde reisplanner.',
+  'account.addLabel':'Andere toegangscode toevoegen',
+  'install.title':'📲 Zet de planner op je beginscherm',
+  'install.intro':'Zo open je de vakantieplanner voortaan als een echte app — met één tik, mooi op volledig scherm.',
+  'offline.note':'📴 Offline — wijzigingen worden gesynct zodra je terug online bent',
+
+  'confirm.sure':'Zeker?',
+  'checklist.renameHint':'Klik om te hernoemen',
+  'checklist.renameMoveHint':'Klik om te hernoemen of te verplaatsen',
+  'checklist.omitHint':'Weglaten voor deze vakantie',
+  'checklist.starOn':'Algemeen — op alle vakanties. Klik om enkel op deze vakantie te zetten.',
+  'checklist.starOff':'Alleen deze vakantie. Klik om op al je vakanties te zetten.',
+  'checklist.leftOut':'Weggelaten:',
+  'checklist.restoreHint':'Terug toevoegen aan deze vakantie',
+  'checklist.more':'▾ Lees meer ({n})',
+  'checklist.less':'▴ Lees minder',
+  'checklist.empty':'Nog geen items — voeg er hieronder toe of importeer een lijst.',
+  'tmpl.empty':'Nog geen algemene items — voeg er hieronder toe.',
+  'tmpl.catHint':'Categorie',
+  'places.empty':'Nog geen plaatsen — voeg restaurants, apotheek, ziekenhuis, wassalon… toe.',
+
+  'board.unscheduled':'Nog te plannen',
+  'board.dayN':'Dag {n}',
+  'board.dropHint':'Sleep hier items die nog geen datum hebben.',
+  'card.reopen':'↺ heropen',
+  'card.done':'✓ gedaan',
+  'card.unlock':'🔓 losmaken',
+  'card.lock':'🔒 vastzetten',
+  'card.pinnedHint':'Vastgezet op deze datum',
+  'link.open':'🔗 open link',
+  'link.map':'📍 kaart',
+  'link.route':'🧭 route',
+
+  'alert.lockedItem':'Dit item staat vast op zijn dag omdat het aan een specifieke datum gebonden is (bv. een markt). Maak het eerst los via 🔓 als je het echt wil verschuiven.',
+  'alert.createTripFirst':'Maak eerst een vakantie aan.',
+  'err.tripName':'Geef de vakantie een naam.',
+  'err.tripDates':'Vul start- en einddatum in.',
+  'err.tripOrder':'De einddatum ligt vóór de startdatum.',
+  'err.importEmpty':'Geen items gevonden om te importeren.',
+  'err.aiEmpty':'Geen suggesties gevonden. Plak de lijst van de AI (regels met - …).',
+  'err.invalidKey':'Ongeldige toegangscode.',
+  'err.invalidLinkKey':'De code in de link is ongeldig.',
+  'err.keyExpired':'Toegangscode is niet meer geldig.',
+  'err.noConnection':'Kon geen verbinding maken. Probeer opnieuw.',
+  'err.enterKey':'Vul een toegangscode in.',
+
+  'flash.saved':'Opgeslagen ✓',
+  'flash.refreshed':'Vernieuwd ✓',
+  'flash.allTrips':'Op alle vakanties ✓',
+  'flash.thisTripOnly':'Alleen deze vakantie ✓',
+  'flash.imported':'{n} item(s) geïmporteerd ✓',
+  'flash.activitiesAdded':'{n} activiteit(en) toegevoegd ✓',
+  'flash.promptCopied':'Prompt gekopieerd ✓',
+  'flash.language':'Taal: Nederlands ✓',
+
+  'account.defaultName':'Mijn account',
+  'account.sharedName':'Gedeelde planner',
+  'account.generic':'Account',
+  'account.code':'code',
+  'account.active':'actief',
+  'account.forget':'vergeten',
+  'account.forgetHint':'Van dit toestel vergeten',
+  'account.empty':'Nog geen accounts bewaard op dit toestel. Voeg er hieronder één toe.',
+
+  'copy.promptTitle':'Kopieer de prompt:',
+  'copy.statusTitle':'Kopieer deze status manueel:',
+  'copy.statusDone':'Status gekopieerd naar klembord — plak het in WhatsApp of waar je wil.',
+
+  'aiprompt.intro':'Ik plan een vakantie en wil concrete activiteiten-suggesties.',
+  'aiprompt.trip':'Vakantie: {trip}',
+  'aiprompt.period':'Periode: {start} t/m {end} ({days})',
+  'aiprompt.transport':'Vervoer: {transport}',
+  'aiprompt.contextLabel':'Context / notities:',
+  'aiprompt.plannedLabel':'Al gepland (niet opnieuw voorstellen):',
+  'aiprompt.nothingYet':'- (nog niets)',
+  'aiprompt.ask':'Stel 10 activiteiten voor die passen bij de context en de bestemming.',
+  'aiprompt.format':'Geef ELK voorstel op één regel, exact in dit formaat, zonder extra uitleg errond:',
+  'aiprompt.pattern':'- <emoji> <titel> | <locatie of leeg> | <korte notitie of leeg>',
+  'aiprompt.emojis':'Gebruik als emoji: 🎯 activiteit, 🍽️ eten, 🚌 vervoer, 🛍️ markt/winkel, 📌 overig.',
+  'aiprompt.exampleLabel':'Voorbeeld:',
+  'aiprompt.example':'- 🎯 Wandeling in de calanques | Cassis | mooi in de ochtend, neem water mee',
+  'aiprompt.answerLang':'Antwoord in het Nederlands.',
+
+  'status.heading':'*{trip} — status*',
+  'status.today':'📍 Vandaag — Dag {n} ({date}):',
+  'status.nothingPlanned':'  (niets gepland)',
+  'status.tomorrow':'🗓️ Morgen ({date}):',
+  'status.nothingPlannedYet':'  (nog niets gepland)',
+  'status.countdown':'🕐 Nog {n} dag(en) tot vertrek.',
+  'status.over':'🏁 Reis is voorbij.',
+  'status.unscheduled':'📋 Nog te plannen: {n} item(s)',
+  'status.andMore':'  …en {n} meer',
+  'status.packing':'🧳 Inpaklijst: {done}/{total} gepakt',
+  'status.prep':'✅ Voorbereiding: {done}/{total} gedaan',
+  'status.shareTitle':'{trip} — status',
+
+  'install.detected':'Gedetecteerd: <b>{label}</b>',
+  'install.moreSummary':'Ander toestel of klopt dit niet? Toon alle stappen',
+  'install.ios-safari.label':'iPhone / iPad · Safari',
+  'install.ios-safari.steps':[
+    'Tik onderaan op de <b>Deel</b>-knop {share} (vierkantje met pijltje omhoog).',
+    'Scrol en tik op <b>“Zet op beginscherm”</b>.',
+    'Tik rechtsboven op <b>“Voeg toe”</b>.'
+  ],
+  'install.ios-other.label':'iPhone / iPad · Chrome / Edge / Firefox',
+  'install.ios-other.steps':[
+    'Tik op de <b>⋯</b> (drie puntjes) of de <b>Deel</b>-knop {share} — meestal rechtsboven of onderaan.',
+    'Kies <b>“Delen”</b> als dat verschijnt, en dan <b>“Zet op beginscherm”</b>.',
+    'Tik op <b>“Voeg toe”</b>.'
+  ],
+  'install.ios-other.note':'Tip: in <b>Safari</b> gaat het het vlotst — daar staat de Deel-knop {share} meteen in de balk, zonder de ⋯.',
+  'install.android-chrome.label':'Android · Chrome',
+  'install.android-chrome.steps':[
+    'Tik rechtsboven op <b>⋮</b> (de drie puntjes).',
+    'Tik op <b>“Toevoegen aan startscherm”</b> of <b>“App installeren”</b>.',
+    'Tik op <b>“Toevoegen”</b> / <b>“Installeren”</b>.'
+  ],
+  'install.android-samsung.label':'Android · Samsung Internet',
+  'install.android-samsung.steps':[
+    'Tik onderaan op het <b>menu</b> (≡).',
+    'Tik op <b>“Pagina toevoegen aan”</b> en kies <b>“Startscherm”</b>.',
+    'Bevestig met <b>“Toevoegen”</b>.'
+  ],
+  'install.android-firefox.label':'Android · Firefox',
+  'install.android-firefox.steps':[
+    'Tik op <b>⋮</b> (de drie puntjes).',
+    'Tik op <b>“Toevoegen aan startscherm”</b>.',
+    'Bevestig met <b>“Toevoegen”</b>.'
+  ],
+  'install.android-edge.label':'Android · Edge',
+  'install.android-edge.steps':[
+    'Tik onderaan op <b>≡</b> (menu).',
+    'Tik op <b>“Toevoegen aan telefoon”</b> → <b>“Startscherm”</b>.',
+    'Bevestig met <b>“Toevoegen”</b>.'
+  ],
+  'install.desktop.label':'Computer',
+  'install.desktop.steps':[
+    'Klik in de adresbalk op het <b>installeer-icoon</b> (een schermpje met ⊕), of open het browsermenu.',
+    'Kies <b>“App installeren”</b> of <b>“Toevoegen aan …”</b>.',
+    'Bevestig.'
+  ],
+
+  'seed.trip1.name':'Griekenland',
+  'seed.trip2.name':'Zuid-Frankrijk',
+  'seed.pack.passport':'Paspoort / ID',
+  'seed.pack.phone':'Telefoon + oplader',
+  'seed.pack.suncream':'Zonnebrand',
+  'seed.pack.snorkel':'Snorkelspullen',
+  'seed.pack.roadmap':'Wegenkaart / vignet',
+  'seed.prep.rentcar':'Auto huren regelen',
+  'seed.prep.petsitter':'Kat/planten opvang regelen',
+  'seed.prep.route':'Route uitstippelen',
+  'seed.place.pharmacy':'Apotheek centrum',
+  'seed.place.hospital':'Ziekenhuis Chania',
+  'seed.place.tavernaNotes':'verse vis — reserveer rond 20u',
+  'seed.place.emergency':'spoed 24/7',
+  'seed.place.oldPort':'Oude haven, Chania',
+  'seed.place.center':'Chania centrum',
+  'seed.place.bakeryNotes':'verse croissants \'s ochtends',
+  'seed.item.market':'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)'
+},
+es:{
+  'app.title':'Planificador de vacaciones',
+  'app.subtitle':'Todo en un solo sitio — mueve lo que quieras, lo fijado se queda fijo.',
+  'btn.settings':'⚙️ Ajustes',
+  'btn.account':'👤 Cuenta',
+  'btn.refresh':'🔄 Actualizar',
+
+  'panel.packing':'🧳 Lista de equipaje',
+  'panel.prep':'✅ Por preparar',
+  'panel.places':'🗺️ Lugares útiles',
+  'title.import':'Importar lista',
+  'title.manageGeneralPacking':'Gestionar la lista de equipaje general',
+  'title.manageGeneralPrep':'Gestionar la preparación general',
+  'title.newItemCat':'Categoría para los nuevos elementos',
+  'ph.addItem':'Añadir elemento…',
+  'ph.addTodo':'Añadir tarea…',
+  'cat.auto':'✨ Automático',
+  'scope.general':'General',
+  'scope.generalPrep':'También en todas mis vacaciones (general)',
+  'btn.addPlace':'+ Añadir lugar',
+
+  'board.title':'📍 Planning diario y actividades',
+  'btn.shareStatus':'📤 Compartir estado',
+  'btn.aiSuggest':'✨ Sugerencias IA',
+  'btn.newItem':'+ Nuevo elemento',
+  'nav.day':'Día',
+  'nav.places':'Lugares',
+  'nav.packing':'Equipaje',
+  'nav.prep':'Preparar',
+
+  'label.title':'Título',
+  'label.category':'Categoría',
+  'label.day':'Día',
+  'label.name':'Nombre',
+  'label.type':'Tipo',
+  'label.icon':'Icono',
+  'label.transport':'Transporte',
+  'label.startDate':'Fecha de inicio',
+  'label.endDate':'Fecha de fin',
+  'label.locationOrLink':'Ubicación o enlace (opcional)',
+  'label.addressOrLink':'Dirección o enlace (opcional)',
+  'label.from':'Desde (opcional)',
+  'label.to':'Hasta (opcional)',
+  'label.notes':'Notas (opcional)',
+  'label.tripNotes':'Notas / contexto (opcional)',
+  'label.lockedDay':'Fijado en este día (p. ej. día de mercado — no se puede mover sin más)',
+  'label.importTo':'Añadir a',
+  'label.aiContext':'Contexto / notas sobre estas vacaciones',
+  'label.aiResult':'Pega aquí la respuesta de la IA',
+
+  'ph.itemTitle':'p. ej. Mercado en Aix-en-Provence',
+  'ph.location':'p. ej. Puerto viejo de La Canea, o un enlace www',
+  'ph.itemNotes':'p. ej. reservar entradas con antelación, salir a las 9h…',
+  'ph.placeName':'p. ej. Taverna To Karnagio',
+  'ph.placeNotes':'p. ej. abierto hasta las 23h, urgencias más cercanas…',
+  'ph.tripName':'p. ej. Grecia',
+  'ph.tripNotes':'p. ej. viajamos con bebé, nos gusta la naturaleza y los mercados locales, económico, región de Toscana…',
+  'ph.tmplAdd':'Añadir elemento general…',
+  'ph.import':'Vacaciones\n◯ Vigilabebés\n◯ Módem\n✔ Pasaporte\n…',
+  'ph.aiContext':'p. ej. viajamos con bebé, naturaleza y mercados locales, económico…',
+  'ph.aiResult':'- 🎯 Paseo por las calanques | Cassis | mejor por la mañana\n- 🍽️ Comida en un bistró local | Aix-en-Provence |\n…',
+  'ph.accessCode':'Código de acceso',
+  'ph.accLabel':'Nombre (p. ej. Francia compartido)',
+
+  'btn.cancel':'Cancelar',
+  'btn.save':'Guardar',
+  'btn.delete':'Eliminar',
+  'btn.ready':'Listo',
+  'btn.import':'Importar',
+  'btn.close':'Cerrar',
+  'btn.open':'Abrir',
+  'btn.understood':'Entendido',
+  'btn.copyPrompt':'📋 Copiar prompt de IA',
+  'btn.aiAdd':'Añadir a por planificar',
+  'btn.addAndOpen':'Añadir y abrir',
+  'btn.installGuide':'📲 Añadir a la pantalla de inicio (guía)',
+  'btn.confirmDelete':'¿Seguro? Pulsa otra vez',
+
+  'itemcat.activity':'🎯 Actividad',
+  'itemcat.food':'🍽️ Comida',
+  'itemcat.transport':'🚌 Transporte',
+  'itemcat.market':'🛍️ Mercado/tienda',
+  'itemcat.other':'📌 Otros',
+
+  'transport.plane':'✈️ Avión',
+  'transport.car':'🚗 Coche',
+  'transport.train':'🚆 Tren',
+
+  'packcat.baby':'Lorre & Loes',
+  'packcat.tech':'Electrónica y cables',
+  'packcat.toilet':'Aseo y salud',
+  'packcat.kleding':'Ropa',
+  'packcat.slaap':'Cama y toallas',
+  'packcat.eten':'Comida y cocina',
+  'packcat.ontspanning':'Ocio',
+  'packcat.documenten':'Documentos y llaves',
+  'packcat.overig':'Otros',
+
+  'placegroup.eten':'Comer y beber',
+  'placegroup.dienst':'Servicios y emergencias',
+  'placecat.restaurant':'Restaurante',
+  'placecat.cafe':'Café / bar',
+  'placecat.bakker':'Panadería',
+  'placecat.ijs':'Helados / postres',
+  'placecat.supermarkt':'Supermercado',
+  'placecat.apotheek':'Farmacia',
+  'placecat.ziekenhuis':'Hospital / urgencias',
+  'placecat.dokter':'Médico',
+  'placecat.wassalon':'Lavandería',
+  'placecat.geldautomaat':'Cajero automático',
+  'placecat.tankstation':'Gasolinera',
+  'placecat.winkel':'Tienda',
+  'placecat.overig':'Otros',
+
+  'tabs.newTrip':'+ Nuevas vacaciones',
+  'trip.none':'Aún no hay vacaciones — añade unas.',
+  'trip.day':'día',
+  'trip.days':'días',
+  'modal.item.new':'Nuevo elemento',
+  'modal.item.edit':'Editar elemento',
+  'modal.place.new':'Nuevo lugar',
+  'modal.place.edit':'Editar lugar',
+  'modal.trip.new':'Nuevas vacaciones',
+  'modal.trip.edit':'Editar vacaciones',
+  'modal.tmpl.packing':'🧳 Lista de equipaje general',
+  'modal.tmpl.prep':'✅ Preparación general',
+  'modal.import.packing':'🧳 Importar lista de equipaje',
+  'modal.import.prep':'✅ Importar preparación',
+  'tmpl.intro':'Aquí solo aparecen los elementos <strong>generales</strong> (con la etiqueta "general"), no los que añadiste a unas vacaciones concretas. Cambia la categoría, renombra (toca el texto) o elimina (desaparece en todas partes). En cada viaje puedes omitir elementos por separado.',
+  'import.intro':'Pega tu lista (p. ej. de una app de tareas). Las marcas se ignoran, una línea de título sin viñeta se omite y los duplicados se fusionan.',
+  'import.scope.trip':'Estas vacaciones',
+  'import.scope.general':'General (todas las vacaciones)',
+  'ai.title':'✨ Sugerencias de actividades con IA',
+  'ai.intro':'1. Describe tus vacaciones. 2. Copia el prompt y pégalo en ChatGPT o Claude. 3. Pega aquí la respuesta para añadir las actividades a <strong>Por planificar</strong>.',
+  'gate.intro':'Introduce el código de acceso para abrir el planificador.',
+  'account.title':'Cambiar de cuenta',
+  'account.intro':'Elige con qué código de acceso abres el planificador. Así cambias fácilmente entre tu planificador privado y uno compartido.',
+  'account.addLabel':'Añadir otro código de acceso',
+  'install.title':'📲 Añade el planificador a tu pantalla de inicio',
+  'install.intro':'Así abres el planificador como una app de verdad — con un toque y a pantalla completa.',
+  'offline.note':'📴 Sin conexión — los cambios se sincronizan en cuanto vuelvas a estar en línea',
+
+  'confirm.sure':'¿Seguro?',
+  'checklist.renameHint':'Toca para renombrar',
+  'checklist.renameMoveHint':'Toca para renombrar o mover',
+  'checklist.omitHint':'Omitir en estas vacaciones',
+  'checklist.starOn':'General — en todas las vacaciones. Toca para dejarlo solo en estas vacaciones.',
+  'checklist.starOff':'Solo estas vacaciones. Toca para ponerlo en todas tus vacaciones.',
+  'checklist.leftOut':'Omitidos:',
+  'checklist.restoreHint':'Volver a añadir a estas vacaciones',
+  'checklist.more':'▾ Ver más ({n})',
+  'checklist.less':'▴ Ver menos',
+  'checklist.empty':'Aún no hay elementos — añade abajo o importa una lista.',
+  'tmpl.empty':'Aún no hay elementos generales — añade abajo.',
+  'tmpl.catHint':'Categoría',
+  'places.empty':'Aún no hay lugares — añade restaurantes, farmacia, hospital, lavandería…',
+
+  'board.unscheduled':'Por planificar',
+  'board.dayN':'Día {n}',
+  'board.dropHint':'Arrastra aquí los elementos que aún no tienen fecha.',
+  'card.reopen':'↺ reabrir',
+  'card.done':'✓ hecho',
+  'card.unlock':'🔓 soltar',
+  'card.lock':'🔒 fijar',
+  'card.pinnedHint':'Fijado en esta fecha',
+  'link.open':'🔗 abrir enlace',
+  'link.map':'📍 mapa',
+  'link.route':'🧭 ruta',
+
+  'alert.lockedItem':'Este elemento está fijado en su día porque depende de una fecha concreta (p. ej. un mercado). Suéltalo primero con 🔓 si de verdad quieres moverlo.',
+  'alert.createTripFirst':'Crea primero unas vacaciones.',
+  'err.tripName':'Ponle un nombre a las vacaciones.',
+  'err.tripDates':'Rellena la fecha de inicio y de fin.',
+  'err.tripOrder':'La fecha de fin es anterior a la de inicio.',
+  'err.importEmpty':'No se encontraron elementos para importar.',
+  'err.aiEmpty':'No se encontraron sugerencias. Pega la lista de la IA (líneas con - …).',
+  'err.invalidKey':'Código de acceso no válido.',
+  'err.invalidLinkKey':'El código del enlace no es válido.',
+  'err.keyExpired':'El código de acceso ya no es válido.',
+  'err.noConnection':'No se pudo conectar. Inténtalo de nuevo.',
+  'err.enterKey':'Introduce un código de acceso.',
+
+  'flash.saved':'Guardado ✓',
+  'flash.refreshed':'Actualizado ✓',
+  'flash.allTrips':'En todas las vacaciones ✓',
+  'flash.thisTripOnly':'Solo estas vacaciones ✓',
+  'flash.imported':'{n} elemento(s) importado(s) ✓',
+  'flash.activitiesAdded':'{n} actividad(es) añadida(s) ✓',
+  'flash.promptCopied':'Prompt copiado ✓',
+  'flash.language':'Idioma: Español ✓',
+
+  'account.defaultName':'Mi cuenta',
+  'account.sharedName':'Planificador compartido',
+  'account.generic':'Cuenta',
+  'account.code':'código',
+  'account.active':'activa',
+  'account.forget':'olvidar',
+  'account.forgetHint':'Olvidar en este dispositivo',
+  'account.empty':'Aún no hay cuentas guardadas en este dispositivo. Añade una abajo.',
+
+  'copy.promptTitle':'Copia el prompt:',
+  'copy.statusTitle':'Copia este estado manualmente:',
+  'copy.statusDone':'Estado copiado al portapapeles — pégalo en WhatsApp o donde quieras.',
+
+  'aiprompt.intro':'Estoy planificando unas vacaciones y quiero sugerencias concretas de actividades.',
+  'aiprompt.trip':'Vacaciones: {trip}',
+  'aiprompt.period':'Periodo: {start} hasta {end} ({days})',
+  'aiprompt.transport':'Transporte: {transport}',
+  'aiprompt.contextLabel':'Contexto / notas:',
+  'aiprompt.plannedLabel':'Ya planificado (no lo propongas otra vez):',
+  'aiprompt.nothingYet':'- (nada todavía)',
+  'aiprompt.ask':'Propón 10 actividades que encajen con el contexto y el destino.',
+  'aiprompt.format':'Da CADA propuesta en una sola línea, exactamente en este formato, sin explicaciones alrededor:',
+  'aiprompt.pattern':'- <emoji> <título> | <ubicación o vacío> | <nota breve o vacío>',
+  'aiprompt.emojis':'Usa como emoji: 🎯 actividad, 🍽️ comida, 🚌 transporte, 🛍️ mercado/tienda, 📌 otros.',
+  'aiprompt.exampleLabel':'Ejemplo:',
+  'aiprompt.example':'- 🎯 Paseo por las calanques | Cassis | mejor por la mañana, lleva agua',
+  'aiprompt.answerLang':'Responde en español.',
+
+  'status.heading':'*{trip} — estado*',
+  'status.today':'📍 Hoy — Día {n} ({date}):',
+  'status.nothingPlanned':'  (nada planificado)',
+  'status.tomorrow':'🗓️ Mañana ({date}):',
+  'status.nothingPlannedYet':'  (aún nada planificado)',
+  'status.countdown':'🕐 Quedan {n} día(s) para salir.',
+  'status.over':'🏁 El viaje ha terminado.',
+  'status.unscheduled':'📋 Por planificar: {n} elemento(s)',
+  'status.andMore':'  …y {n} más',
+  'status.packing':'🧳 Equipaje: {done}/{total} preparado',
+  'status.prep':'✅ Preparación: {done}/{total} hecho',
+  'status.shareTitle':'{trip} — estado',
+
+  'install.detected':'Detectado: <b>{label}</b>',
+  'install.moreSummary':'¿Otro dispositivo o no es correcto? Ver todos los pasos',
+  'install.ios-safari.label':'iPhone / iPad · Safari',
+  'install.ios-safari.steps':[
+    'Toca abajo el botón <b>Compartir</b> {share} (el cuadrado con la flecha hacia arriba).',
+    'Desplázate y toca <b>“Añadir a pantalla de inicio”</b>.',
+    'Toca arriba a la derecha en <b>“Añadir”</b>.'
+  ],
+  'install.ios-other.label':'iPhone / iPad · Chrome / Edge / Firefox',
+  'install.ios-other.steps':[
+    'Toca los <b>⋯</b> (tres puntos) o el botón <b>Compartir</b> {share} — normalmente arriba a la derecha o abajo.',
+    'Elige <b>“Compartir”</b> si aparece, y luego <b>“Añadir a pantalla de inicio”</b>.',
+    'Toca <b>“Añadir”</b>.'
+  ],
+  'install.ios-other.note':'Consejo: en <b>Safari</b> es más rápido — allí el botón Compartir {share} está directamente en la barra, sin los ⋯.',
+  'install.android-chrome.label':'Android · Chrome',
+  'install.android-chrome.steps':[
+    'Toca arriba a la derecha en <b>⋮</b> (los tres puntos).',
+    'Toca <b>“Añadir a pantalla de inicio”</b> o <b>“Instalar aplicación”</b>.',
+    'Toca <b>“Añadir”</b> / <b>“Instalar”</b>.'
+  ],
+  'install.android-samsung.label':'Android · Samsung Internet',
+  'install.android-samsung.steps':[
+    'Toca abajo el <b>menú</b> (≡).',
+    'Toca <b>“Añadir página a”</b> y elige <b>“Pantalla de inicio”</b>.',
+    'Confirma con <b>“Añadir”</b>.'
+  ],
+  'install.android-firefox.label':'Android · Firefox',
+  'install.android-firefox.steps':[
+    'Toca <b>⋮</b> (los tres puntos).',
+    'Toca <b>“Añadir a pantalla de inicio”</b>.',
+    'Confirma con <b>“Añadir”</b>.'
+  ],
+  'install.android-edge.label':'Android · Edge',
+  'install.android-edge.steps':[
+    'Toca abajo <b>≡</b> (menú).',
+    'Toca <b>“Añadir al teléfono”</b> → <b>“Pantalla de inicio”</b>.',
+    'Confirma con <b>“Añadir”</b>.'
+  ],
+  'install.desktop.label':'Ordenador',
+  'install.desktop.steps':[
+    'Haz clic en la barra de direcciones en el <b>icono de instalar</b> (una pantallita con ⊕), o abre el menú del navegador.',
+    'Elige <b>“Instalar aplicación”</b> o <b>“Añadir a …”</b>.',
+    'Confirma.'
+  ],
+
+  'seed.trip1.name':'Grecia',
+  'seed.trip2.name':'Sur de Francia',
+  'seed.pack.passport':'Pasaporte / DNI',
+  'seed.pack.phone':'Móvil + cargador',
+  'seed.pack.suncream':'Crema solar',
+  'seed.pack.snorkel':'Equipo de snorkel',
+  'seed.pack.roadmap':'Mapa de carreteras / viñeta',
+  'seed.prep.rentcar':'Reservar coche de alquiler',
+  'seed.prep.petsitter':'Organizar quién cuida el gato/las plantas',
+  'seed.prep.route':'Trazar la ruta',
+  'seed.place.pharmacy':'Farmacia del centro',
+  'seed.place.hospital':'Hospital de La Canea',
+  'seed.place.tavernaNotes':'pescado fresco — reserva sobre las 20h',
+  'seed.place.emergency':'urgencias 24/7',
+  'seed.place.oldPort':'Puerto viejo, La Canea',
+  'seed.place.center':'Centro de La Canea',
+  'seed.place.bakeryNotes':'croissants recién hechos por la mañana',
+  'seed.item.market':'Mercado en Aix-en-Provence (solo martes/jueves/sábado)'
+}
+};
+
+function detectLang(){
+  try{
+    const saved = localStorage.getItem(LANG_KEY);
+    if(saved && I18N[saved]) return saved;
+  }catch(e){}
+  const nav = ((navigator.languages && navigator.languages[0]) || navigator.language || 'nl').toLowerCase();
+  return nav.startsWith('es') ? 'es' : 'nl';
+}
+let lang = detectLang();
+
+// Vertaalt een sleutel; onbekende sleutels vallen terug op het Nederlands en
+// uiteindelijk op de sleutel zelf, zodat er nooit een lege tekst verschijnt.
+function t(key, vars){
+  const dict = I18N[lang] || I18N.nl;
+  let s = dict[key];
+  if(s === undefined) s = I18N.nl[key];
+  if(s === undefined) return key;
+  if(typeof s !== 'string' || !vars) return s;
+  Object.keys(vars).forEach(k=>{ s = s.split('{'+k+'}').join(vars[k]); });
+  return s;
+}
+function currentLocale(){ return (LANGS[lang] || LANGS.nl).locale; }
+
+function setLang(code){
+  if(!I18N[code] || code === lang) return;
+  lang = code;
+  try{ localStorage.setItem(LANG_KEY, code); }catch(e){}
+  applyStaticI18n();
+  if(state){
+    renderAll();
+    flashSaved(t('flash.language'));
+  }
+}
+
+function renderLangSwitch(){
+  document.querySelectorAll('.lang-switch').forEach(wrap=>{
+    wrap.innerHTML = Object.keys(LANGS).map(code =>
+      `<button type="button" class="${code===lang?'active':''}" title="${escapeAttr(LANGS[code].name)}"
+         onclick="setLang('${code}')">${LANGS[code].label}</button>`
+    ).join('');
+  });
+}
+
+// Zet alle vaste teksten in de HTML om naar de gekozen taal.
+function applyStaticI18n(){
+  document.documentElement.lang = lang;
+  document.title = t('app.title');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.title = t(el.dataset.i18nTitle); });
+
+  // Selects die uit de categorie-lijsten worden opgebouwd.
+  const pc = document.getElementById('packingCat');
+  if(pc){
+    const keep = pc.value || 'auto';
+    pc.innerHTML = `<option value="auto">${escapeHtml(t('cat.auto'))}</option>` +
+      PACKING_CATS.map(c=>`<option value="${c.key}">${escapeHtml(catLabel(c.key))}</option>`).join('');
+    pc.value = keep;
+  }
+  const pcat = document.getElementById('placeCategoryInput');
+  if(pcat){
+    const keep = pcat.value;
+    pcat.dataset.filled = '';
+    fillPlaceCategorySelect();
+    if(keep) pcat.value = keep;
+  }
+  renderLangSwitch();
+}
+
 const PALETTES = [
   {deep:'#123a5c', accent:'#e0672e', wash:'#eef4f7'},
   {deep:'#5b4a72', accent:'#c98a2c', wash:'#f6f0e8'},
@@ -776,10 +1461,10 @@ let expandedLists = {packing:false, prep:false};
 // Ingeklapte categorie-secties van de inpaklijst: per vakantie bewaard en
 // meegesynct, zodat de status blijft na herladen/bookmarken.
 function catCollapsed(){
-  const t = getTrip();
-  if(!t) return {};
-  if(!t.catCollapsed) t.catCollapsed = {};
-  return t.catCollapsed;
+  const trip = getTrip();
+  if(!trip) return {};
+  if(!trip.catCollapsed) trip.catCollapsed = {};
+  return trip.catCollapsed;
 }
 // Welk item wordt momenteel hernoemd (inline invoerveld).
 let editingChecklist = null;   // {kind, id, general}
@@ -805,8 +1490,11 @@ function tripDays(trip){
   const e = new Date(trip.endDate+'T00:00:00');
   return Math.max(1, Math.round((e-s)/86400000)+1);
 }
+function dayCount(n){
+  return n + ' ' + t(n === 1 ? 'trip.day' : 'trip.days');
+}
 function getTrip(){
-  return state.trips.find(t=>t.id===currentTripId);
+  return state.trips.find(x=>x.id===currentTripId);
 }
 function tripPalette(trip){
   return PALETTES[Math.max(0, state.trips.indexOf(trip)) % PALETTES.length];
@@ -820,62 +1508,100 @@ function emptyTemplateState(){
 }
 
 // Categorieën voor de inpaklijst (vaste set + "Overig" als vangnet).
+// De sleutel staat in de data, het label komt uit de vertalingen.
 const PACKING_CATS = [
-  {key:'baby',        label:'🍼 Lorre & Loes'},
-  {key:'tech',        label:'🔌 Elektronica & kabels'},
-  {key:'toilet',      label:'🧴 Toilet & gezondheid'},
-  {key:'kleding',     label:'👕 Kleding'},
-  {key:'slaap',       label:'🛏️ Slaap & handdoeken'},
-  {key:'eten',        label:'🍽️ Eten & keuken'},
-  {key:'ontspanning', label:'🎒 Ontspanning'},
-  {key:'documenten',  label:'🔑 Documenten & sleutels'},
-  {key:'overig',      label:'📦 Overig'}
+  {key:'baby',        emoji:'🍼'},
+  {key:'tech',        emoji:'🔌'},
+  {key:'toilet',      emoji:'🧴'},
+  {key:'kleding',     emoji:'👕'},
+  {key:'slaap',       emoji:'🛏️'},
+  {key:'eten',        emoji:'🍽️'},
+  {key:'ontspanning', emoji:'🎒'},
+  {key:'documenten',  emoji:'🔑'},
+  {key:'overig',      emoji:'📦'}
 ];
-const CAT_LABEL = Object.fromEntries(PACKING_CATS.map(c=>[c.key, c.label]));
+const CAT_EMOJI = Object.fromEntries(PACKING_CATS.map(c=>[c.key, c.emoji]));
+function catLabel(key){
+  const k = CAT_EMOJI[key] ? key : 'overig';
+  return CAT_EMOJI[k] + ' ' + t('packcat.'+k);
+}
+
+// Vervoer: in de data staat een sleutel, oudere data bewaarde de Nederlandse
+// tekst ("✈️ Vliegtuig"). Beide worden hier op dezelfde sleutel afgebeeld.
+const TRANSPORTS = [
+  {key:'plane', emoji:'✈️'},
+  {key:'car',   emoji:'🚗'},
+  {key:'train', emoji:'🚆'}
+];
+function transportKey(value){
+  const s = String(value || '').trim();
+  const direct = TRANSPORTS.find(x => x.key === s);
+  if(direct) return direct.key;
+  const byEmoji = TRANSPORTS.find(x => s.startsWith(x.emoji));
+  return byEmoji ? byEmoji.key : 'plane';
+}
+function transportLabel(value){ return t('transport.' + transportKey(value)); }
 
 // Nuttige plaatsen: types verdeeld over twee groepen (eten / diensten & nood).
 const PLACE_GROUPS = [
-  {key:'eten',   label:'🍽️ Eten & drinken'},
-  {key:'dienst', label:'🧭 Diensten & nood'}
+  {key:'eten',   emoji:'🍽️'},
+  {key:'dienst', emoji:'🧭'}
 ];
 const PLACE_CATS = [
-  {key:'restaurant',  label:'🍽️ Restaurant',        group:'eten'},
-  {key:'cafe',        label:'☕ Café / bar',          group:'eten'},
-  {key:'bakker',      label:'🥐 Bakker',             group:'eten'},
-  {key:'ijs',         label:'🍦 IJs / dessert',      group:'eten'},
-  {key:'supermarkt',  label:'🛒 Supermarkt',         group:'dienst'},
-  {key:'apotheek',    label:'💊 Apotheek',           group:'dienst'},
-  {key:'ziekenhuis',  label:'🏥 Ziekenhuis / spoed', group:'dienst'},
-  {key:'dokter',      label:'🩺 Dokter',             group:'dienst'},
-  {key:'wassalon',    label:'🧺 Wassalon',           group:'dienst'},
-  {key:'geldautomaat',label:'🏧 Geldautomaat',       group:'dienst'},
-  {key:'tankstation', label:'⛽ Tankstation',        group:'dienst'},
-  {key:'winkel',      label:'🛍️ Winkel',             group:'dienst'},
-  {key:'overig',      label:'📍 Overig',             group:'dienst'}
+  {key:'restaurant',  emoji:'🍽️', group:'eten'},
+  {key:'cafe',        emoji:'☕',  group:'eten'},
+  {key:'bakker',      emoji:'🥐', group:'eten'},
+  {key:'ijs',         emoji:'🍦', group:'eten'},
+  {key:'supermarkt',  emoji:'🛒', group:'dienst'},
+  {key:'apotheek',    emoji:'💊', group:'dienst'},
+  {key:'ziekenhuis',  emoji:'🏥', group:'dienst'},
+  {key:'dokter',      emoji:'🩺', group:'dienst'},
+  {key:'wassalon',    emoji:'🧺', group:'dienst'},
+  {key:'geldautomaat',emoji:'🏧', group:'dienst'},
+  {key:'tankstation', emoji:'⛽', group:'dienst'},
+  {key:'winkel',      emoji:'🛍️', group:'dienst'},
+  {key:'overig',      emoji:'📍', group:'dienst'}
 ];
-const PLACE_CAT_LABEL = Object.fromEntries(PLACE_CATS.map(c=>[c.key, c.label]));
+const PLACE_CAT_EMOJI = Object.fromEntries(PLACE_CATS.map(c=>[c.key, c.emoji]));
 const PLACE_CAT_GROUP = Object.fromEntries(PLACE_CATS.map(c=>[c.key, c.group]));
-function placeCatEmoji(key){ return (PLACE_CAT_LABEL[key] || '📍 Overig').split(' ')[0]; }
-function placeCatName(key){ return (PLACE_CAT_LABEL[key] || '📍 Overig').split(' ').slice(1).join(' '); }
+function placeCatEmoji(key){ return PLACE_CAT_EMOJI[key] || '📍'; }
+function placeCatName(key){ return t('placecat.' + (PLACE_CAT_EMOJI[key] ? key : 'overig')); }
+function placeCatLabel(key){ return placeCatEmoji(key) + ' ' + placeCatName(key); }
+function placeGroupLabel(key){
+  const g = PLACE_GROUPS.find(x=>x.key===key) || PLACE_GROUPS[1];
+  return g.emoji + ' ' + t('placegroup.' + g.key);
+}
 
 // Trefwoorden per categorie; eerste match wint (volgorde = prioriteit).
+// Nederlandse én Spaanse trefwoorden staan in dezelfde lijst, zodat de
+// automatische categorie werkt ongeacht de taal waarin je typt.
+// Let op: de invoer wordt zonder accenten vergeleken, dus de trefwoorden
+// staan hier ook zonder accenten ('movil', 'cafe', …).
 // Bewust GEEN trefwoorden voor taken als "frigo/inchecken/alarm" zodat die
 // in "Overig" belanden en opvallen (ze horen eigenlijk bij Voorbereiding).
 const CAT_KEYWORDS = [
-  ['baby', ['loes','loesje','lorre','baby','pamper','luier','flesje','melkpoeder','melk','bavet','speen','tutter','verzorgingskussen','groentenpap','bedje','stoeletje','zwemband','beertje','paddington','fietske','doekjes','drinkbeker','slab','papfles']],
-  ['documenten', ['paspoort','identiteit','sleutel','ticket','boarding','visa','portefeuille','bankkaart','reispas','verzekering','papieren','document']],
-  ['tech', ['laptop','ipad','tablet','lader','oplader','powerbank','gsm','kabel','hdmi','verleng','adapter','modem','sim','batterij','koptelefoon','oortje','usb','charger','houder']],
-  ['toilet', ['medicatie','ehbo','douche','tandenborstel','tandpasta','shampoo','zeep','mugzalf','muggen','zonnebrand','zonnecreme','naprep','watjes','oren','pleister','scheer','borstel']],
-  ['kleding', ['kleding','pyjama','ondergoed','sok','schoen','pantoffel','laars','jas','zwemkleren','broek','trui','shirt','pet','muts','sjaal','handschoen','kleren','zonnebril']],
-  ['slaap', ['beddengoed','bedden','laken','kussen','handdoek','deken','slaapzak']],
-  ['eten', ['eten','keuken','kruiden','wijn','water','mes','vuilzak','koffie','thee','snack','bord','beker','picknick','proviand']],
-  ['ontspanning', ['boek','spel','speelgoed','muziek','kaarten','tijdschrift','magazine']]
+  ['baby', ['loes','loesje','lorre','baby','pamper','luier','flesje','melkpoeder','melk','bavet','speen','tutter','verzorgingskussen','groentenpap','bedje','stoeletje','zwemband','beertje','paddington','fietske','doekjes','drinkbeker','slab','papfles',
+            'bebe','panal','chupete','biberon','papilla','leche','babero','cuna','cochecito','carrito','manoplas','flotador','toallitas','vigilabebes']],
+  ['documenten', ['paspoort','identiteit','sleutel','ticket','boarding','visa','portefeuille','bankkaart','reispas','verzekering','papieren','document',
+            'pasaporte','identidad','llave','billete','entrada','tarjeta','seguro','documento','cartera','visado','embarque']],
+  ['tech', ['laptop','ipad','tablet','lader','oplader','powerbank','gsm','kabel','hdmi','verleng','adapter','modem','sim','batterij','koptelefoon','oortje','usb','charger','houder',
+            'portatil','ordenador','tableta','cargador','bateria','cable','movil','telefono','auricular','adaptador','alargador','soporte']],
+  ['toilet', ['medicatie','ehbo','douche','tandenborstel','tandpasta','shampoo','zeep','mugzalf','muggen','zonnebrand','zonnecreme','naprep','watjes','oren','pleister','scheer','borstel',
+            'medicamento','medicina','botiquin','ducha','cepillo de dientes','pasta de dientes','champu','jabon','crema solar','protector solar','repelente','mosquito','tirita','maquinilla','bastoncillo']],
+  ['kleding', ['kleding','pyjama','ondergoed','sok','schoen','pantoffel','laars','jas','zwemkleren','broek','trui','shirt','pet','muts','sjaal','handschoen','kleren','zonnebril',
+            'ropa','pijama','calcetin','zapato','zapatilla','chancla','bota','abrigo','chaqueta','banador','bikini','pantalon','camiseta','camisa','jersey','gorra','bufanda','guante','gafas de sol']],
+  ['slaap', ['beddengoed','bedden','laken','kussen','handdoek','deken','slaapzak',
+            'sabana','almohada','toalla','manta','saco de dormir','ropa de cama']],
+  ['eten', ['eten','keuken','kruiden','wijn','water','mes','vuilzak','koffie','thee','snack','bord','beker','picknick','proviand',
+            'comida','cocina','especia','vino','agua','cuchillo','bolsa de basura','cafe','infusion','plato','vaso','picnic','tupper']],
+  ['ontspanning', ['boek','spel','speelgoed','muziek','kaarten','tijdschrift','magazine',
+            'libro','juego','juguete','musica','baraja','revista','naipes']]
 ];
 function stripDiacritics(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function guessCategory(text){
-  const t = stripDiacritics((text||'').toLowerCase());
+  const hay = stripDiacritics((text||'').toLowerCase());
   for(const [cat, words] of CAT_KEYWORDS){
-    if(words.some(w => t.includes(w))) return cat;
+    if(words.some(w => hay.includes(w))) return cat;
   }
   return 'overig';
 }
@@ -887,46 +1613,46 @@ function defaultState(){
     _templateSeeded:true,
     template:{
       packing:[
-        {id:passport, text:'Paspoort / ID'},
-        {id:phone, text:'Telefoon + oplader'}
+        {id:passport, text:t('seed.pack.passport')},
+        {id:phone, text:t('seed.pack.phone')}
       ],
       prep:[]
     },
     trips:[
       {
-        id:uid(), name:'Griekenland', emoji:'🇬🇷', transport:'✈️ Vliegtuig',
+        id:uid(), name:t('seed.trip1.name'), emoji:'🇬🇷', transport:'plane',
         startDate:nextMonday(), endDate:addDays(nextMonday(),6),
         packing:[
-          {id:uid(), text:'Zonnebrand', done:false},
-          {id:uid(), text:'Snorkelspullen', done:false}
+          {id:uid(), text:t('seed.pack.suncream'), done:false},
+          {id:uid(), text:t('seed.pack.snorkel'), done:false}
         ],
         prep:[
-          {id:uid(), text:'Auto huren regelen', done:false},
-          {id:uid(), text:'Kat/planten opvang regelen', done:false}
+          {id:uid(), text:t('seed.prep.rentcar'), done:false},
+          {id:uid(), text:t('seed.prep.petsitter'), done:false}
         ],
         places:[
-          {id:uid(), name:'Taverna To Karnagio', category:'restaurant', location:'Oude haven, Chania', notes:'verse vis — reserveer rond 20u'},
-          {id:uid(), name:'Apotheek centrum', category:'apotheek', location:'Chania centrum', notes:''},
-          {id:uid(), name:'Ziekenhuis Chania', category:'ziekenhuis', location:'General Hospital of Chania', notes:'spoed 24/7'}
+          {id:uid(), name:'Taverna To Karnagio', category:'restaurant', location:t('seed.place.oldPort'), notes:t('seed.place.tavernaNotes')},
+          {id:uid(), name:t('seed.place.pharmacy'), category:'apotheek', location:t('seed.place.center'), notes:''},
+          {id:uid(), name:t('seed.place.hospital'), category:'ziekenhuis', location:'General Hospital of Chania', notes:t('seed.place.emergency')}
         ],
         items:[],
         templateState:emptyTemplateState()
       },
       {
-        id:uid(), name:'Zuid-Frankrijk', emoji:'🇫🇷', transport:'🚗 Auto',
+        id:uid(), name:t('seed.trip2.name'), emoji:'🇫🇷', transport:'car',
         startDate:nextMonday(14), endDate:addDays(nextMonday(14),6),
         packing:[
-          {id:uid(), text:'Wegenkaart / vignet', done:false}
+          {id:uid(), text:t('seed.pack.roadmap'), done:false}
         ],
         prep:[
-          {id:uid(), text:'Route uitstippelen', done:false}
+          {id:uid(), text:t('seed.prep.route'), done:false}
         ],
         places:[
           {id:uid(), name:'Wassalon Lav\'Matic', category:'wassalon', location:'Aix-en-Provence', notes:''},
-          {id:uid(), name:'Boulangerie du coin', category:'bakker', location:'Aix-en-Provence', notes:'verse croissants \'s ochtends'}
+          {id:uid(), name:'Boulangerie du coin', category:'bakker', location:'Aix-en-Provence', notes:t('seed.place.bakeryNotes')}
         ],
         items:[
-          {id:uid(), title:'Markt in Aix-en-Provence (enkel dinsdag/donderdag/zaterdag)', category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
+          {id:uid(), title:t('seed.item.market'), category:'🛍️', day:2, locked:true, done:false, location:'Aix-en-Provence'}
         ],
         templateState:emptyTemplateState()
       }
@@ -939,15 +1665,15 @@ function migrateState(s){
   if(!s) return null;
   if(!s.trips){
     const out = {trips:[]};
-    [['greece','Griekenland','🇬🇷'],['france','Zuid-Frankrijk','🇫🇷']].forEach(([key, name, emoji])=>{
-      const t = s[key];
-      if(!t) return;
+    [['greece','seed.trip1.name','🇬🇷'],['france','seed.trip2.name','🇫🇷']].forEach(([key, nameKey, emoji])=>{
+      const old = s[key];
+      if(!old) return;
       out.trips.push({
-        id:uid(), name, emoji,
-        transport:t.transport||'✈️ Vliegtuig',
-        startDate:t.startDate,
-        endDate:addDays(t.startDate, Math.max(1, t.duration||7)-1),
-        packing:t.packing||[], prep:t.prep||[], items:t.items||[]
+        id:uid(), name:t(nameKey), emoji,
+        transport:transportKey(old.transport),
+        startDate:old.startDate,
+        endDate:addDays(old.startDate, Math.max(1, old.duration||7)-1),
+        packing:old.packing||[], prep:old.prep||[], items:old.items||[]
       });
     });
     s = out;
@@ -962,15 +1688,15 @@ function migrateTemplate(s){
   if(!s || !s.trips) return s;
   s.template = s.template || {packing:[], prep:[]};
   ['packing','prep'].forEach(k=>{ if(!Array.isArray(s.template[k])) s.template[k] = []; });
-  s.trips.forEach(t=>{
-    t.packing = Array.isArray(t.packing) ? t.packing : [];
-    t.prep = Array.isArray(t.prep) ? t.prep : [];
-    t.places = Array.isArray(t.places) ? t.places : [];
-    t.templateState = t.templateState || emptyTemplateState();
+  s.trips.forEach(trip=>{
+    trip.packing = Array.isArray(trip.packing) ? trip.packing : [];
+    trip.prep = Array.isArray(trip.prep) ? trip.prep : [];
+    trip.places = Array.isArray(trip.places) ? trip.places : [];
+    trip.templateState = trip.templateState || emptyTemplateState();
     ['packing','prep'].forEach(k=>{
-      t.templateState[k] = t.templateState[k] || {done:{}, skip:{}};
-      t.templateState[k].done = t.templateState[k].done || {};
-      t.templateState[k].skip = t.templateState[k].skip || {};
+      trip.templateState[k] = trip.templateState[k] || {done:{}, skip:{}};
+      trip.templateState[k].done = trip.templateState[k].done || {};
+      trip.templateState[k].skip = trip.templateState[k].skip || {};
     });
   });
 
@@ -979,19 +1705,19 @@ function migrateTemplate(s){
     if(s.trips.length >= 2 && s.template.packing.length === 0 && s.template.prep.length === 0){
       const norm = txt => (txt||'').trim().toLowerCase();
       ['packing','prep'].forEach(kind=>{
-        const perTrip = s.trips.map(t => {
+        const perTrip = s.trips.map(trip => {
           const m = new Map();
-          t[kind].forEach(it => m.set(norm(it.text), it));
+          trip[kind].forEach(it => m.set(norm(it.text), it));
           return m;
         });
         const common = [...perTrip[0].keys()].filter(key => key && perTrip.every(m => m.has(key)));
         common.forEach(key=>{
           const tid = uid();
           s.template[kind].push({id:tid, text:perTrip[0].get(key).text});
-          s.trips.forEach((t, i)=>{
+          s.trips.forEach((trip, i)=>{
             const it = perTrip[i].get(key);
-            if(it && it.done) t.templateState[kind].done[tid] = true;
-            t[kind] = t[kind].filter(x => x !== it);
+            if(it && it.done) trip.templateState[kind].done[tid] = true;
+            trip[kind] = trip[kind].filter(x => x !== it);
           });
         });
       });
@@ -1002,7 +1728,7 @@ function migrateTemplate(s){
   // Eénmalig: bestaande inpak-items automatisch een categorie geven.
   if(!s._catSeeded){
     (s.template.packing||[]).forEach(it=>{ if(it.cat==null) it.cat = guessCategory(it.text); });
-    s.trips.forEach(t=>{ (t.packing||[]).forEach(it=>{ if(it.cat==null) it.cat = guessCategory(it.text); }); });
+    s.trips.forEach(trip=>{ (trip.packing||[]).forEach(it=>{ if(it.cat==null) it.cat = guessCategory(it.text); }); });
     s._catSeeded = true;
   }
   return s;
@@ -1129,7 +1855,7 @@ async function persist(){
       console.error('Opslaan naar server mislukt', e);
       if(String(e.message).includes('invalid key')){
         localStorage.removeItem(ACCESS_KEY_STORAGE);
-        openGate('Toegangscode is niet meer geldig.');
+        openGate(t('err.keyExpired'));
       } else {
         // Geen verbinding: wijziging staat lokaal en is als dirty gemarkeerd.
         setOffline(true);
@@ -1140,7 +1866,7 @@ async function persist(){
 
 function flashSaved(text){
   const n = document.getElementById('saveNote');
-  n.textContent = text || 'Opgeslagen ✓';
+  n.textContent = text || t('flash.saved');
   n.classList.add('show');
   clearTimeout(flashSaved._t);
   flashSaved._t = setTimeout(()=>n.classList.remove('show'), 900);
@@ -1164,12 +1890,12 @@ async function refreshData(){
     }
     await loadState();
     renderAll();
-    flashSaved('Vernieuwd ✓');
+    flashSaved(t('flash.refreshed'));
   }catch(e){
     console.error('Vernieuwen mislukt', e);
     if(String(e.message).includes('invalid key')){
       localStorage.removeItem(ACCESS_KEY_STORAGE);
-      openGate('Toegangscode is niet meer geldig.');
+      openGate(t('err.keyExpired'));
     } else {
       setOffline(true);
     }
@@ -1217,18 +1943,18 @@ function armDelete(id, rerender){
 function renderTabs(){
   const wrap = document.getElementById('tabs');
   wrap.innerHTML = '';
-  state.trips.forEach(t=>{
-    const pal = tripPalette(t);
+  state.trips.forEach(trip=>{
+    const pal = tripPalette(trip);
     const el = document.createElement('div');
-    el.className = 'tab' + (t.id===currentTripId?' active':'');
+    el.className = 'tab' + (trip.id===currentTripId?' active':'');
     el.style.setProperty('--tab-deep', pal.deep);
-    el.onclick = ()=>switchTrip(t.id);
-    el.innerHTML = `<span class="stamp">${escapeHtml(t.emoji||'🌍')}</span> ${escapeHtml(t.name)}`;
+    el.onclick = ()=>switchTrip(trip.id);
+    el.innerHTML = `<span class="stamp">${escapeHtml(trip.emoji||'🌍')}</span> ${escapeHtml(trip.name)}`;
     wrap.appendChild(el);
   });
   const add = document.createElement('button');
   add.className = 'tab-add';
-  add.textContent = '+ Nieuwe vakantie';
+  add.textContent = t('tabs.newTrip');
   add.onclick = ()=>openTripModal(null);
   wrap.appendChild(add);
 }
@@ -1238,7 +1964,7 @@ function renderAll(){
   const trip = getTrip();
   const settingsBtn = document.getElementById('tripSettingsBtn');
   if(!trip){
-    document.getElementById('tripSummary').textContent = 'Nog geen vakanties — voeg er een toe.';
+    document.getElementById('tripSummary').textContent = t('trip.none');
     settingsBtn.style.display = 'none';
     document.getElementById('packingList').innerHTML = '';
     document.getElementById('prepList').innerHTML = '';
@@ -1257,7 +1983,7 @@ function renderAll(){
 
   const days = tripDays(trip);
   document.getElementById('tripSummary').textContent =
-    `${fmtDate(trip.startDate,0)} – ${fmtDate(trip.startDate,days-1)} · ${days} ${days===1?'dag':'dagen'} · ${trip.transport}`;
+    `${fmtDate(trip.startDate,0)} – ${fmtDate(trip.startDate,days-1)} · ${dayCount(days)} · ${transportLabel(trip.transport)}`;
 
   renderChecklist('packing');
   renderChecklist('prep');
@@ -1278,8 +2004,8 @@ function checklistItemHtml(kind, it){
   const editing = editingChecklist && editingChecklist.kind===kind
     && editingChecklist.id===it.id && editingChecklist.general===it.general;
   const delBtn = it.general
-    ? `<button class="del" title="Weglaten voor deze vakantie" onclick="removeChecklist('${kind}','${it.id}',true)">✕</button>`
-    : `<button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}',false)">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>`;
+    ? `<button class="del" title="${escapeAttr(t('checklist.omitHint'))}" onclick="removeChecklist('${kind}','${it.id}',true)">✕</button>`
+    : `<button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeChecklist('${kind}','${it.id}',false)">${pendingDeleteId===it.id?escapeHtml(t('confirm.sure')):'✕'}</button>`;
   let textEl;
   if(editing){
     const catSel = kind==='packing'
@@ -1289,10 +2015,10 @@ function checklistItemHtml(kind, it){
         onkeydown="onRenameKey(event,'${kind}','${it.id}',${it.general})"
         onblur="onEditBlur('${kind}','${it.id}',${it.general})">${catSel}`;
   } else {
-    const title = kind==='packing' ? 'Klik om te hernoemen of te verplaatsen' : 'Klik om te hernoemen';
-    textEl = `<span class="pi-text" title="${title}" onclick="startRename('${kind}','${it.id}',${it.general})">${escapeHtml(it.text)}</span>`;
+    const title = t(kind==='packing' ? 'checklist.renameMoveHint' : 'checklist.renameHint');
+    textEl = `<span class="pi-text" title="${escapeAttr(title)}" onclick="startRename('${kind}','${it.id}',${it.general})">${escapeHtml(it.text)}</span>`;
   }
-  const starBtn = editing ? '' : `<button class="star${it.general?' on':''}" title="${it.general?'Algemeen — op alle vakanties. Klik om enkel op deze vakantie te zetten.':'Alleen deze vakantie. Klik om op al je vakanties te zetten.'}" onclick="toggleGeneral('${kind}','${it.id}',${it.general})">${it.general?'★':'☆'}</button>`;
+  const starBtn = editing ? '' : `<button class="star${it.general?' on':''}" title="${escapeAttr(t(it.general?'checklist.starOn':'checklist.starOff'))}" onclick="toggleGeneral('${kind}','${it.id}',${it.general})">${it.general?'★':'☆'}</button>`;
   return `<li class="panel-item${it.done?' done':''}">
     <input type="checkbox" ${it.done?'checked':''} onchange="toggleChecklist('${kind}','${it.id}',${it.general})">
     ${textEl}
@@ -1302,7 +2028,7 @@ function checklistItemHtml(kind, it){
 }
 function catOptionsHtml(selected){
   const sel = selected || 'overig';
-  return PACKING_CATS.map(c => `<option value="${c.key}" ${c.key===sel?'selected':''}>${escapeHtml(c.label)}</option>`).join('');
+  return PACKING_CATS.map(c => `<option value="${c.key}" ${c.key===sel?'selected':''}>${escapeHtml(catLabel(c.key))}</option>`).join('');
 }
 
 // Weggelaten algemene items als chips om terug toe te voegen.
@@ -1314,13 +2040,13 @@ function renderLeftOut(kind){
   const skipped = ((state.template && state.template[kind]) || []).filter(ti => ts.skip[ti.id]);
   if(!skipped.length) return;
   const lbl = document.createElement('span');
-  lbl.textContent = 'Weggelaten:';
+  lbl.textContent = t('checklist.leftOut');
   area.appendChild(lbl);
   skipped.forEach(ti=>{
     const chip = document.createElement('button');
     chip.className = 'lo-chip';
     chip.textContent = '+ ' + ti.text;
-    chip.title = 'Terug toevoegen aan deze vakantie';
+    chip.title = t('checklist.restoreHint');
     chip.onclick = ()=>restoreTemplateItem(kind, ti.id);
     area.appendChild(chip);
   });
@@ -1349,7 +2075,9 @@ function renderFlatChecklist(kind){
     li.className = 'list-more';
     const btn = document.createElement('button');
     btn.className = 'more-btn';
-    btn.textContent = collapsed ? `▾ Lees meer (${items.length - CHECKLIST_COLLAPSE_LIMIT})` : '▴ Lees minder';
+    btn.textContent = collapsed
+      ? t('checklist.more', {n: items.length - CHECKLIST_COLLAPSE_LIMIT})
+      : t('checklist.less');
     btn.onclick = ()=>{ expandedLists[kind] = !expandedLists[kind]; renderChecklist(kind); };
     li.appendChild(btn);
     ul.appendChild(li);
@@ -1380,12 +2108,12 @@ function renderGroupedChecklist(){
     const isCollapsed = !!catCollapsed()[cat.key];
     html += `<li class="cat-header${isCollapsed?' collapsed':''}" onclick="toggleCat('${cat.key}')">
       <span class="cat-caret">${isCollapsed?'▸':'▾'}</span>
-      <span class="cat-name">${escapeHtml(cat.label)}</span>
+      <span class="cat-name">${escapeHtml(catLabel(cat.key))}</span>
       <span class="cat-count">${done}/${list.length}</span>
     </li>`;
     if(!isCollapsed) list.forEach(it=>{ html += checklistItemHtml(kind, it); });
   });
-  ul.innerHTML = html || '<li class="empty-hint">Nog geen items — voeg er hieronder toe of importeer een lijst.</li>';
+  ul.innerHTML = html || `<li class="empty-hint">${escapeHtml(t('checklist.empty'))}</li>`;
   renderLeftOut(kind);
   focusEdit(kind, ul);
   applyPanelCollapse(kind);
@@ -1529,7 +2257,7 @@ function promoteToGeneral(kind, id){
   if(kind==='packing') catCollapsed()[g.cat || 'overig'] = false;
   persist();
   renderChecklist(kind);
-  flashSaved('Op alle vakanties ✓');
+  flashSaved(t('flash.allTrips'));
 }
 function demoteToTrip(kind, id){
   const tmpl = state.template[kind] || [];
@@ -1538,8 +2266,8 @@ function demoteToTrip(kind, id){
   const [item] = tmpl.splice(idx, 1);
   // Losmaken zonder dataverlies: elke vakantie die het toonde, houdt een
   // eigen kopie (met zijn eigen afvinkstatus); weggelaten blijft weggelaten.
-  state.trips.forEach(t=>{
-    const ts = t.templateState[kind];
+  state.trips.forEach(trip=>{
+    const ts = trip.templateState[kind];
     const wasSkipped = !!ts.skip[id];
     const wasDone = !!ts.done[id];
     delete ts.done[id];
@@ -1547,13 +2275,13 @@ function demoteToTrip(kind, id){
     if(!wasSkipped){
       const ex = {id:uid(), text:item.text, done:wasDone};
       if(kind==='packing') ex.cat = item.cat || 'overig';
-      t[kind].push(ex);
+      trip[kind].push(ex);
     }
   });
   if(kind==='packing') catCollapsed()[item.cat || 'overig'] = false;
   persist();
   renderChecklist(kind);
-  flashSaved('Alleen deze vakantie ✓');
+  flashSaved(t('flash.thisTripOnly'));
 }
 function addChecklistItem(kind){
   const trip = getTrip();
@@ -1586,10 +2314,10 @@ function addChecklistItem(kind){
 /* ---- nuttige plaatsen ---- */
 // Ingeklapte groepen (eten / diensten) per vakantie bewaard en meegesynct.
 function placeCollapsed(){
-  const t = getTrip();
-  if(!t) return {};
-  if(!t.placeCollapsed) t.placeCollapsed = {};
-  return t.placeCollapsed;
+  const trip = getTrip();
+  if(!trip) return {};
+  if(!trip.placeCollapsed) trip.placeCollapsed = {};
+  return trip.placeCollapsed;
 }
 function togglePlaceGroup(key){
   const m = placeCollapsed();
@@ -1599,7 +2327,7 @@ function togglePlaceGroup(key){
 }
 function placeRowHtml(p){
   const notes = (p.notes||'').trim();
-  const del = `<button class="del ${pendingDeleteId===p.id?'armed':''}" onclick="deletePlace('${p.id}')">${pendingDeleteId===p.id?'Zeker?':'✕'}</button>`;
+  const del = `<button class="del ${pendingDeleteId===p.id?'armed':''}" onclick="deletePlace('${p.id}')">${pendingDeleteId===p.id?escapeHtml(t('confirm.sure')):'✕'}</button>`;
   const catName = placeCatName(p.category);
   return `<li class="place-row" onclick="if(!event.target.closest('a,button'))editPlace('${p.id}')">
     <span class="place-emoji">${placeCatEmoji(p.category)}</span>
@@ -1619,7 +2347,7 @@ function renderPlaces(){
   if(!trip){ return; }
   const places = trip.places || [];
   if(!places.length){
-    ul.innerHTML = '<li class="places-empty">Nog geen plaatsen — voeg restaurants, apotheek, ziekenhuis, wassalon… toe.</li>';
+    ul.innerHTML = `<li class="places-empty">${escapeHtml(t('places.empty'))}</li>`;
     applyPanelCollapse('places');
     return;
   }
@@ -1636,7 +2364,7 @@ function renderPlaces(){
     const isC = !!placeCollapsed()[g.key];
     html += `<li class="places-group-header${isC?' collapsed':''}" onclick="togglePlaceGroup('${g.key}')">
       <span class="cat-caret">${isC?'▸':'▾'}</span>
-      <span class="cat-name">${escapeHtml(g.label)}</span>
+      <span class="cat-name">${escapeHtml(placeGroupLabel(g.key))}</span>
       <span class="cat-count">${list.length}</span>
     </li>`;
     if(!isC) list.forEach(p=>{ html += placeRowHtml(p); });
@@ -1651,9 +2379,9 @@ function fillPlaceCategorySelect(){
   if(sel.dataset.filled) return;
   let html = '';
   PLACE_GROUPS.forEach(g=>{
-    html += `<optgroup label="${escapeAttr(g.label)}">`;
+    html += `<optgroup label="${escapeAttr(placeGroupLabel(g.key))}">`;
     PLACE_CATS.filter(c=>c.group===g.key).forEach(c=>{
-      html += `<option value="${c.key}">${escapeHtml(c.label)}</option>`;
+      html += `<option value="${c.key}">${escapeHtml(placeCatLabel(c.key))}</option>`;
     });
     html += '</optgroup>';
   });
@@ -1662,11 +2390,11 @@ function fillPlaceCategorySelect(){
 }
 function openPlaceModal(existing){
   const trip = getTrip();
-  if(!trip){ alert('Maak eerst een vakantie aan.'); return; }
+  if(!trip){ alert(t('alert.createTripFirst')); return; }
   fillPlaceCategorySelect();
   const place = (existing && typeof existing==='object') ? existing : null;
   editingPlaceId = place ? place.id : null;
-  document.getElementById('placeModalTitle').textContent = place ? 'Plaats bewerken' : 'Nieuwe plaats';
+  document.getElementById('placeModalTitle').textContent = t(place ? 'modal.place.edit' : 'modal.place.new');
   document.getElementById('placeNameInput').value = place ? place.name : '';
   document.getElementById('placeCategoryInput').value = place ? (place.category||'restaurant') : 'restaurant';
   document.getElementById('placeLocationInput').value = place ? (place.location||'') : '';
@@ -1756,7 +2484,7 @@ function refreshNav(){
 function fmtDate(startDate, dayOffset){
   const d = new Date(startDate+'T00:00:00');
   d.setDate(d.getDate()+dayOffset);
-  return d.toLocaleDateString('nl-BE', {weekday:'short', day:'numeric', month:'short'});
+  return d.toLocaleDateString(currentLocale(), {weekday:'short', day:'numeric', month:'short'});
 }
 
 function timeToMin(t){
@@ -1782,11 +2510,11 @@ function makeTimeline(timedItems){
   const span = rangeMax - rangeMin;
   const bar = document.createElement('div');
   bar.className = 'timeline';
-  [12*60, 18*60].forEach(t=>{
-    if(t>rangeMin && t<rangeMax){
+  [12*60, 18*60].forEach(mark=>{
+    if(mark>rangeMin && mark<rangeMax){
       const tick = document.createElement('div');
       tick.className = 'tl-tick';
-      tick.style.left = ((t-rangeMin)/span*100)+'%';
+      tick.style.left = ((mark-rangeMin)/span*100)+'%';
       bar.appendChild(tick);
     }
   });
@@ -1813,7 +2541,7 @@ function renderBoard(){
   if(!trip) return;
 
   // unscheduled column first
-  board.appendChild(makeColumn('unscheduled', 'Nog te plannen', null, trip));
+  board.appendChild(makeColumn('unscheduled', t('board.unscheduled'), null, trip));
 
   const days = tripDays(trip);
   for(let d=0; d<days; d++){
@@ -1836,7 +2564,7 @@ function makeColumn(key, label, dayIndex, trip){
 
   const title = document.createElement('div');
   title.className = 'col-title';
-  title.textContent = dayIndex===null ? label : `Dag ${dayIndex+1}`;
+  title.textContent = dayIndex===null ? label : t('board.dayN', {n: dayIndex+1});
   col.appendChild(title);
 
   if(dayIndex!==null){
@@ -1862,7 +2590,7 @@ function makeColumn(key, label, dayIndex, trip){
   if(items.length===0 && dayIndex===null){
     const hint = document.createElement('div');
     hint.className = 'empty-hint';
-    hint.textContent = 'Sleep hier items die nog geen datum hebben.';
+    hint.textContent = t('board.dropHint');
     col.appendChild(hint);
   }
 
@@ -1876,12 +2604,12 @@ function locationLinksHtml(it){
   if(!loc) return '';
   if(/^(https?:\/\/|www\.)/i.test(loc)){
     const url = /^https?:\/\//i.test(loc) ? loc : 'https://'+loc;
-    return `<div class="card-loc"><a href="${escapeAttr(url)}" target="_blank" rel="noopener">🔗 open link</a></div>`;
+    return `<div class="card-loc"><a href="${escapeAttr(url)}" target="_blank" rel="noopener">${escapeHtml(t('link.open'))}</a></div>`;
   }
   const q = encodeURIComponent(loc);
   return `<div class="card-loc">
-    <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">📍 kaart</a>
-    <a href="https://www.google.com/maps/dir/?api=1&destination=${q}" target="_blank" rel="noopener">🧭 route</a>
+    <a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">${escapeHtml(t('link.map'))}</a>
+    <a href="https://www.google.com/maps/dir/?api=1&destination=${q}" target="_blank" rel="noopener">${escapeHtml(t('link.route'))}</a>
   </div>`;
 }
 
@@ -1895,15 +2623,15 @@ function makeCard(it){
     <div class="card-top">
       <span>${it.category||'📌'}</span>
       <span class="card-title">${escapeHtml(it.title)}</span>
-      ${it.locked?'<span class="pin" title="Vastgezet op deze datum">📌</span>':''}
+      ${it.locked?`<span class="pin" title="${escapeAttr(t('card.pinnedHint'))}">📌</span>`:''}
     </div>
     ${it.startTime?`<div class="card-time">🕘 ${fmtTimeRange(it)}</div>`:''}
     ${notes?`<div class="card-notes">${escapeHtml(notes)}</div>`:''}
     ${locationLinksHtml(it)}
     <div class="card-controls">
-      <button onclick="toggleItemDone('${it.id}')">${it.done?'↺ heropen':'✓ gedaan'}</button>
-      <button onclick="toggleLock('${it.id}')">${it.locked?'🔓 losmaken':'🔒 vastzetten'}</button>
-      <button class="${pendingDeleteId===it.id?'armed':''}" onclick="deleteItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
+      <button onclick="toggleItemDone('${it.id}')">${escapeHtml(t(it.done?'card.reopen':'card.done'))}</button>
+      <button onclick="toggleLock('${it.id}')">${escapeHtml(t(it.locked?'card.unlock':'card.lock'))}</button>
+      <button class="${pendingDeleteId===it.id?'armed':''}" onclick="deleteItem('${it.id}')">${pendingDeleteId===it.id?escapeHtml(t('confirm.sure')):'✕'}</button>
     </div>
   `;
   // Klik op het kaartje zelf opent het detail; knoppen en links gaan voor.
@@ -1919,7 +2647,7 @@ function moveItem(itemId, dayIndex){
   const it = trip.items.find(x=>x.id===itemId);
   if(!it) return;
   if(it.locked){
-    alert('Dit item staat vast op zijn dag omdat het aan een specifieke datum gebonden is (bv. een markt). Maak het eerst los via 🔓 als je het echt wil verschuiven.');
+    alert(t('alert.lockedItem'));
     return;
   }
   it.day = dayIndex;
@@ -1952,7 +2680,7 @@ function editItem(id){
 function openItemModal(existing){
   const trip = getTrip();
   if(!trip) return;
-  document.getElementById('modalTitle').textContent = existing ? 'Item bewerken' : 'Nieuw item';
+  document.getElementById('modalTitle').textContent = t(existing ? 'modal.item.edit' : 'modal.item.new');
   document.getElementById('itemTitleInput').value = existing ? existing.title : '';
   document.getElementById('itemCategoryInput').value = existing ? existing.category : '🎯';
   document.getElementById('itemLocationInput').value = existing ? (existing.location||'') : '';
@@ -1962,12 +2690,12 @@ function openItemModal(existing){
   document.getElementById('itemLockedInput').checked = existing ? !!existing.locked : false;
 
   const daySelect = document.getElementById('itemDayInput');
-  daySelect.innerHTML = '<option value="none">Nog te plannen</option>';
+  daySelect.innerHTML = `<option value="none">${escapeHtml(t('board.unscheduled'))}</option>`;
   const days = tripDays(trip);
   for(let d=0; d<days; d++){
     const opt = document.createElement('option');
     opt.value = d;
-    opt.textContent = `Dag ${d+1} — ${fmtDate(trip.startDate,d)}`;
+    opt.textContent = `${t('board.dayN', {n:d+1})} — ${fmtDate(trip.startDate,d)}`;
     daySelect.appendChild(opt);
   }
   daySelect.value = existing && existing.day!==null && existing.day!==undefined ? existing.day : 'none';
@@ -2006,18 +2734,18 @@ function saveItem(){
 function openTripModal(tripId){
   editingTripId = tripId || null;
   deleteArmed = false;
-  const trip = editingTripId ? state.trips.find(t=>t.id===editingTripId) : null;
-  document.getElementById('tripModalTitle').textContent = trip ? 'Vakantie bewerken' : 'Nieuwe vakantie';
+  const trip = editingTripId ? state.trips.find(x=>x.id===editingTripId) : null;
+  document.getElementById('tripModalTitle').textContent = t(trip ? 'modal.trip.edit' : 'modal.trip.new');
   document.getElementById('tripNameInput').value = trip ? trip.name : '';
   document.getElementById('tripEmojiInput').value = trip ? (trip.emoji||'') : '';
-  document.getElementById('tripTransportInput').value = trip ? trip.transport : '✈️ Vliegtuig';
+  document.getElementById('tripTransportInput').value = trip ? transportKey(trip.transport) : 'plane';
   document.getElementById('tripStartInput').value = trip ? trip.startDate : nextMonday();
   document.getElementById('tripEndInput').value = trip ? trip.endDate : addDays(nextMonday(),6);
   document.getElementById('tripNotesInput').value = trip ? (trip.notes||'') : '';
   document.getElementById('tripModalError').textContent = '';
   const del = document.getElementById('tripDeleteBtn');
   del.style.display = trip ? '' : 'none';
-  del.textContent = 'Verwijderen';
+  del.textContent = t('btn.delete');
   document.getElementById('tripModalBackdrop').classList.add('open');
 }
 function closeTripModal(){
@@ -2028,16 +2756,16 @@ function closeTripModal(){
 function saveTrip(){
   const name = document.getElementById('tripNameInput').value.trim();
   const emoji = document.getElementById('tripEmojiInput').value.trim();
-  const transport = document.getElementById('tripTransportInput').value;
+  const transport = transportKey(document.getElementById('tripTransportInput').value);
   const startDate = document.getElementById('tripStartInput').value;
   const endDate = document.getElementById('tripEndInput').value;
   const notes = document.getElementById('tripNotesInput').value.trim();
   const err = document.getElementById('tripModalError');
-  if(!name){ err.textContent = 'Geef de vakantie een naam.'; return; }
-  if(!startDate || !endDate){ err.textContent = 'Vul start- en einddatum in.'; return; }
-  if(endDate < startDate){ err.textContent = 'De einddatum ligt vóór de startdatum.'; return; }
+  if(!name){ err.textContent = t('err.tripName'); return; }
+  if(!startDate || !endDate){ err.textContent = t('err.tripDates'); return; }
+  if(endDate < startDate){ err.textContent = t('err.tripOrder'); return; }
 
-  let trip = editingTripId ? state.trips.find(t=>t.id===editingTripId) : null;
+  let trip = editingTripId ? state.trips.find(x=>x.id===editingTripId) : null;
   if(trip){
     Object.assign(trip, {name, emoji, transport, startDate, endDate, notes});
   } else {
@@ -2059,10 +2787,10 @@ function deleteTrip(){
   const btn = document.getElementById('tripDeleteBtn');
   if(!deleteArmed){
     deleteArmed = true;
-    btn.textContent = 'Zeker? Klik nogmaals';
+    btn.textContent = t('btn.confirmDelete');
     return;
   }
-  state.trips = state.trips.filter(t=>t.id!==editingTripId);
+  state.trips = state.trips.filter(x=>x.id!==editingTripId);
   if(currentTripId===editingTripId) currentTripId = state.trips[0] ? state.trips[0].id : null;
   persist();
   closeTripModal();
@@ -2074,7 +2802,7 @@ let tmplKind = null;
 function openTemplateModal(kind){
   tmplKind = kind;
   document.getElementById('tmplModalTitle').textContent =
-    kind==='packing' ? '🧳 Algemene inpaklijst' : '✅ Algemene voorbereiding';
+    t(kind==='packing' ? 'modal.tmpl.packing' : 'modal.tmpl.prep');
   document.getElementById('tmplInput').value = '';
   renderTemplateList();
   document.getElementById('tmplModalBackdrop').classList.add('open');
@@ -2090,21 +2818,21 @@ function templateItemHtml(it, withCat){
     ? `<input class="pi-edit" type="text" value="${escapeAttr(it.text)}"
          onkeydown="onTemplateRenameKey(event,'${it.id}')"
          onblur="commitTemplateRename('${it.id}',this.value)">`
-    : `<span class="pi-text" style="flex:1;" title="Klik om te hernoemen" onclick="startTemplateRename('${it.id}')">${escapeHtml(it.text)}</span>`;
+    : `<span class="pi-text" style="flex:1;" title="${escapeAttr(t('checklist.renameHint'))}" onclick="startTemplateRename('${it.id}')">${escapeHtml(it.text)}</span>`;
   const catSel = withCat
-    ? `<select class="tmpl-cat" title="Categorie" onchange="setTemplateCat('${it.id}',this.value)">${catOptionsHtml(it.cat)}</select>`
+    ? `<select class="tmpl-cat" title="${escapeAttr(t('tmpl.catHint'))}" onchange="setTemplateCat('${it.id}',this.value)">${catOptionsHtml(it.cat)}</select>`
     : '';
   return `<li class="panel-item">
     ${textEl}
     ${catSel}
-    <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeTemplateItem('${it.id}')">${pendingDeleteId===it.id?'Zeker?':'✕'}</button>
+    <button class="del ${pendingDeleteId===it.id?'armed':''}" onclick="removeTemplateItem('${it.id}')">${pendingDeleteId===it.id?escapeHtml(t('confirm.sure')):'✕'}</button>
   </li>`;
 }
 function renderTemplateList(){
   const ul = document.getElementById('tmplList');
   const arr = (state.template && state.template[tmplKind]) || [];
   if(!arr.length){
-    ul.innerHTML = '<li class="empty-hint">Nog geen algemene items — voeg er hieronder toe.</li>';
+    ul.innerHTML = `<li class="empty-hint">${escapeHtml(t('tmpl.empty'))}</li>`;
     return;
   }
   if(tmplKind !== 'packing'){
@@ -2119,7 +2847,7 @@ function renderTemplateList(){
       const list = byCat[cat.key];
       if(!list || !list.length) return;
       html += `<li class="cat-header" style="cursor:default">
-        <span class="cat-name">${escapeHtml(cat.label)}</span>
+        <span class="cat-name">${escapeHtml(catLabel(cat.key))}</span>
         <span class="cat-count">${list.length}</span>
       </li>`;
       list.forEach(it=>{ html += templateItemHtml(it, true); });
@@ -2166,8 +2894,8 @@ function removeTemplateItem(id){
   if(!armDelete(id, renderTemplateList)) return;
   state.template[tmplKind] = state.template[tmplKind].filter(x=>x.id!==id);
   // Opruimen van per-vakantie verwijzingen naar dit algemene item.
-  state.trips.forEach(t=>{
-    const ts = t.templateState[tmplKind];
+  state.trips.forEach(trip=>{
+    const ts = trip.templateState[tmplKind];
     delete ts.done[id];
     delete ts.skip[id];
   });
@@ -2197,12 +2925,12 @@ function parseImport(text){
   const seen = new Set();
   const out = [];
   picked.forEach(l=>{
-    const t = anyMarker ? stripMarker(l) : l.trim();
-    if(!t) return;
-    const key = t.toLowerCase();
+    const row = anyMarker ? stripMarker(l) : l.trim();
+    if(!row) return;
+    const key = row.toLowerCase();
     if(seen.has(key)) return;
     seen.add(key);
-    out.push(t);
+    out.push(row);
   });
   return out;
 }
@@ -2210,10 +2938,10 @@ function parseImport(text){
 let importKind = null;
 function openImportModal(kind){
   const trip = getTrip();
-  if(!trip){ alert('Maak eerst een vakantie aan.'); return; }
+  if(!trip){ alert(t('alert.createTripFirst')); return; }
   importKind = kind;
   document.getElementById('importModalTitle').textContent =
-    kind==='packing' ? '🧳 Inpaklijst importeren' : '✅ Voorbereiding importeren';
+    t(kind==='packing' ? 'modal.import.packing' : 'modal.import.prep');
   document.getElementById('importInput').value = '';
   document.getElementById('importError').textContent = '';
   document.getElementById('importScope').value = 'trip';
@@ -2227,32 +2955,32 @@ function confirmImport(){
   if(!importKind) return;
   const err = document.getElementById('importError');
   const items = parseImport(document.getElementById('importInput').value);
-  if(!items.length){ err.textContent = 'Geen items gevonden om te importeren.'; return; }
+  if(!items.length){ err.textContent = t('err.importEmpty'); return; }
   const scope = document.getElementById('importScope').value;
   const trip = getTrip();
   let added = 0;
   // Inpak-items krijgen automatisch een categorie op basis van trefwoorden.
-  const mkItem = (t, done) => {
-    const it = done===undefined ? {id:uid(), text:t} : {id:uid(), text:t, done};
-    if(importKind==='packing') it.cat = guessCategory(t);
+  const mkItem = (text, done) => {
+    const it = done===undefined ? {id:uid(), text} : {id:uid(), text, done};
+    if(importKind==='packing') it.cat = guessCategory(text);
     return it;
   };
   if(scope === 'general'){
     const existing = new Set((state.template[importKind]||[]).map(x=>x.text.trim().toLowerCase()));
-    items.forEach(t=>{
-      if(existing.has(t.toLowerCase())) return;
-      existing.add(t.toLowerCase());
-      state.template[importKind].push(mkItem(t));
+    items.forEach(text=>{
+      if(existing.has(text.toLowerCase())) return;
+      existing.add(text.toLowerCase());
+      state.template[importKind].push(mkItem(text));
       added++;
     });
   } else {
     // Ontdubbelen tegenover wat al op deze vakantie staat (algemeen + eigen).
     const eff = effectiveList(trip, importKind);
     const existing = new Set(eff.general.concat(eff.extras).map(x=>x.text.trim().toLowerCase()));
-    items.forEach(t=>{
-      if(existing.has(t.toLowerCase())) return;
-      existing.add(t.toLowerCase());
-      trip[importKind].push(mkItem(t, false));
+    items.forEach(text=>{
+      if(existing.has(text.toLowerCase())) return;
+      existing.add(text.toLowerCase());
+      trip[importKind].push(mkItem(text, false));
       added++;
     });
   }
@@ -2260,14 +2988,14 @@ function confirmImport(){
   persist();
   closeImportModal();
   renderAll();
-  flashSaved(`${added} item(s) geïmporteerd ✓`);
+  flashSaved(t('flash.imported', {n: added}));
 }
 
 /* ---- AI-suggesties voor activiteiten (prompt kopiëren, antwoord terugplakken) ---- */
 const ACT_CATS = ['🎯','🍽️','🚌','🛍️','📌'];
 function openActivityAI(){
   const trip = getTrip();
-  if(!trip){ alert('Maak eerst een vakantie aan.'); return; }
+  if(!trip){ alert(t('alert.createTripFirst')); return; }
   document.getElementById('aiContextInput').value = trip.notes || '';
   document.getElementById('aiResultInput').value = '';
   document.getElementById('aiError').textContent = '';
@@ -2282,23 +3010,24 @@ function buildActivityPrompt(){
   const ctx = document.getElementById('aiContextInput').value.trim();
   const existing = trip.items.map(it=>it.title).filter(Boolean);
   const L = [];
-  L.push('Ik plan een vakantie en wil concrete activiteiten-suggesties.');
+  L.push(t('aiprompt.intro'));
   L.push('');
-  L.push(`Vakantie: ${trip.name}${trip.emoji?' '+trip.emoji:''}`);
-  L.push(`Periode: ${trip.startDate} t/m ${trip.endDate} (${days} ${days===1?'dag':'dagen'})`);
-  L.push(`Vervoer: ${trip.transport}`);
-  if(ctx){ L.push(''); L.push('Context / notities:'); L.push(ctx); }
+  L.push(t('aiprompt.trip', {trip: `${trip.name}${trip.emoji?' '+trip.emoji:''}`}));
+  L.push(t('aiprompt.period', {start: trip.startDate, end: trip.endDate, days: dayCount(days)}));
+  L.push(t('aiprompt.transport', {transport: transportLabel(trip.transport)}));
+  if(ctx){ L.push(''); L.push(t('aiprompt.contextLabel')); L.push(ctx); }
   L.push('');
-  L.push('Al gepland (niet opnieuw voorstellen):');
-  if(existing.length) existing.forEach(t=>L.push(`- ${t}`));
-  else L.push('- (nog niets)');
+  L.push(t('aiprompt.plannedLabel'));
+  if(existing.length) existing.forEach(title=>L.push(`- ${title}`));
+  else L.push(t('aiprompt.nothingYet'));
   L.push('');
-  L.push('Stel 10 activiteiten voor die passen bij de context en de bestemming.');
-  L.push('Geef ELK voorstel op één regel, exact in dit formaat, zonder extra uitleg errond:');
-  L.push('- <emoji> <titel> | <locatie of leeg> | <korte notitie of leeg>');
-  L.push('Gebruik als emoji: 🎯 activiteit, 🍽️ eten, 🚌 vervoer, 🛍️ markt/winkel, 📌 overig.');
-  L.push('Voorbeeld:');
-  L.push('- 🎯 Wandeling in de calanques | Cassis | mooi in de ochtend, neem water mee');
+  L.push(t('aiprompt.ask'));
+  L.push(t('aiprompt.format'));
+  L.push(t('aiprompt.pattern'));
+  L.push(t('aiprompt.emojis'));
+  L.push(t('aiprompt.exampleLabel'));
+  L.push(t('aiprompt.example'));
+  L.push(t('aiprompt.answerLang'));
   return L.join('\n');
 }
 function copyActivityPrompt(){
@@ -2309,9 +3038,11 @@ function copyActivityPrompt(){
   persist();
   const text = buildActivityPrompt();
   if(navigator.clipboard){
-    navigator.clipboard.writeText(text).then(()=>flashSaved('Prompt gekopieerd ✓')).catch(()=>prompt('Kopieer de prompt:', text));
+    navigator.clipboard.writeText(text)
+      .then(()=>flashSaved(t('flash.promptCopied')))
+      .catch(()=>prompt(t('copy.promptTitle'), text));
   } else {
-    prompt('Kopieer de prompt:', text);
+    prompt(t('copy.promptTitle'), text);
   }
 }
 function parseActivitySuggestions(text){
@@ -2338,7 +3069,7 @@ function addActivitySuggestions(){
   if(!trip) return;
   const err = document.getElementById('aiError');
   const items = parseActivitySuggestions(document.getElementById('aiResultInput').value);
-  if(!items.length){ err.textContent = 'Geen suggesties gevonden. Plak de lijst van de AI (regels met - …).'; return; }
+  if(!items.length){ err.textContent = t('err.aiEmpty'); return; }
   const existing = new Set(trip.items.map(x=>(x.title||'').trim().toLowerCase()));
   let added = 0;
   items.forEach(s=>{
@@ -2351,7 +3082,7 @@ function addActivitySuggestions(){
   persist();
   closeActivityAI();
   renderBoard();
-  flashSaved(`${added} activiteit(en) toegevoegd ✓`);
+  flashSaved(t('flash.activitiesAdded', {n: added}));
 }
 
 function shareStatus(){
@@ -2364,72 +3095,72 @@ function shareStatus(){
   const diffDays = Math.round((today-start)/86400000);
 
   const lines = [];
-  lines.push(`*${tripLabel} — status*`);
-  lines.push(`(${new Date().toLocaleDateString('nl-BE',{day:'numeric',month:'long'})})`);
+  lines.push(t('status.heading', {trip: tripLabel}));
+  lines.push(`(${new Date().toLocaleDateString(currentLocale(),{day:'numeric',month:'long'})})`);
   lines.push('');
 
   if(diffDays>=0 && diffDays<days){
-    lines.push(`📍 Vandaag — Dag ${diffDays+1} (${fmtDate(trip.startDate,diffDays)}):`);
+    lines.push(t('status.today', {n: diffDays+1, date: fmtDate(trip.startDate,diffDays)}));
     const itemLine = (it)=>`  ${it.done?'✅':'⬜'}${it.startTime?` ${fmtTimeRange(it)}`:''} ${it.category||''} ${it.title}${it.locked?' 📌':''}`;
     const byTime = (a,b)=>(a.startTime?timeToMin(a.startTime):Infinity)-(b.startTime?timeToMin(b.startTime):Infinity);
     const todayItems = trip.items.filter(it=>it.day===diffDays).sort(byTime);
     if(todayItems.length===0){
-      lines.push('  (niets gepland)');
+      lines.push(t('status.nothingPlanned'));
     } else {
       todayItems.forEach(it=>lines.push(itemLine(it)));
     }
     lines.push('');
     if(diffDays+1<days){
-      lines.push(`🗓️ Morgen (${fmtDate(trip.startDate,diffDays+1)}):`);
+      lines.push(t('status.tomorrow', {date: fmtDate(trip.startDate,diffDays+1)}));
       const tmrw = trip.items.filter(it=>it.day===diffDays+1).sort(byTime);
-      if(tmrw.length===0) lines.push('  (nog niets gepland)');
+      if(tmrw.length===0) lines.push(t('status.nothingPlannedYet'));
       else tmrw.forEach(it=>lines.push(itemLine(it)));
       lines.push('');
     }
   } else if(diffDays<0){
-    lines.push(`🕐 Nog ${-diffDays} dag(en) tot vertrek.`);
+    lines.push(t('status.countdown', {n: -diffDays}));
     lines.push('');
   } else {
-    lines.push('🏁 Reis is voorbij.');
+    lines.push(t('status.over'));
     lines.push('');
   }
 
   const unscheduled = trip.items.filter(it=>it.day===null||it.day===undefined);
-  lines.push(`📋 Nog te plannen: ${unscheduled.length} item(s)`);
+  lines.push(t('status.unscheduled', {n: unscheduled.length}));
   if(unscheduled.length>0){
     unscheduled.slice(0,5).forEach(it=>lines.push(`  • ${it.title}`));
-    if(unscheduled.length>5) lines.push(`  …en ${unscheduled.length-5} meer`);
+    if(unscheduled.length>5) lines.push(t('status.andMore', {n: unscheduled.length-5}));
   }
   lines.push('');
 
   const pk = effectiveList(trip, 'packing');
   const packItems = pk.general.concat(pk.extras);
   const packDone = packItems.filter(p=>p.done).length;
-  lines.push(`🧳 Inpaklijst: ${packDone}/${packItems.length} gepakt`);
+  lines.push(t('status.packing', {done: packDone, total: packItems.length}));
   const packLeft = packItems.filter(p=>!p.done);
   if(packLeft.length>0){
     packLeft.slice(0,6).forEach(p=>lines.push(`  ⬜ ${p.text}`));
-    if(packLeft.length>6) lines.push(`  …en ${packLeft.length-6} meer`);
+    if(packLeft.length>6) lines.push(t('status.andMore', {n: packLeft.length-6}));
   }
   lines.push('');
 
   const pr = effectiveList(trip, 'prep');
   const prepItems = pr.general.concat(pr.extras);
   const prepDone = prepItems.filter(p=>p.done).length;
-  lines.push(`✅ Voorbereiding: ${prepDone}/${prepItems.length} gedaan`);
+  lines.push(t('status.prep', {done: prepDone, total: prepItems.length}));
 
   const text = lines.join('\n');
 
   if(navigator.share){
-    navigator.share({title:`${tripLabel} — status`, text}).catch(()=>{});
+    navigator.share({title:t('status.shareTitle', {trip: tripLabel}), text}).catch(()=>{});
   } else if(navigator.clipboard){
     navigator.clipboard.writeText(text).then(()=>{
-      alert('Status gekopieerd naar klembord — plak het in WhatsApp of waar je wil.');
+      alert(t('copy.statusDone'));
     }).catch(()=>{
-      prompt('Kopieer deze status manueel:', text);
+      prompt(t('copy.statusTitle'), text);
     });
   } else {
-    prompt('Kopieer deze status manueel:', text);
+    prompt(t('copy.statusTitle'), text);
   }
 }
 
@@ -2463,7 +3194,7 @@ async function submitGate(){
   document.getElementById('gateError').textContent = '';
   try{
     await loadState();
-    rememberAccount(key, 'Mijn account');
+    rememberAccount(key, t('account.defaultName'));
     document.getElementById('gateInput').value = '';
     closeGate();
     renderAll();
@@ -2472,7 +3203,7 @@ async function submitGate(){
     console.error(e);
     localStorage.removeItem(ACCESS_KEY_STORAGE);
     document.getElementById('gateError').textContent =
-      String(e.message).includes('invalid key') ? 'Ongeldige toegangscode.' : 'Kon geen verbinding maken. Probeer opnieuw.';
+      t(String(e.message).includes('invalid key') ? 'err.invalidKey' : 'err.noConnection');
   }
 }
 
@@ -2488,7 +3219,7 @@ function rememberAccount(key, label){
   const a = getAccounts();
   const ex = a.find(x => x.key === key);
   if(ex){ if(label) ex.label = label; }
-  else a.push({label: label || ('Account ' + (a.length + 1)), key});
+  else a.push({label: label || (t('account.generic') + ' ' + (a.length + 1)), key});
   saveAccounts(a);
 }
 function forgetAccount(key){ saveAccounts(getAccounts().filter(x => x.key !== key)); renderAccountList(); }
@@ -2523,7 +3254,7 @@ function renderAccountList(){
   const accounts = getAccounts();
   wrap.innerHTML = '';
   if(!accounts.length){
-    wrap.innerHTML = '<div class="places-empty" style="margin:4px 0;">Nog geen accounts bewaard op dit toestel. Voeg er hieronder één toe.</div>';
+    wrap.innerHTML = `<div class="places-empty" style="margin:4px 0;">${escapeHtml(t('account.empty'))}</div>`;
     return;
   }
   accounts.forEach(acc=>{
@@ -2533,11 +3264,11 @@ function renderAccountList(){
     row.innerHTML = `
       <span class="acc-ic">${isActive ? '✅' : '👤'}</span>
       <div class="acc-body">
-        <div class="acc-name">${escapeHtml(acc.label || 'Account')}</div>
-        <div class="acc-sub">code ${escapeHtml(maskKey(acc.key))}</div>
+        <div class="acc-name">${escapeHtml(acc.label || t('account.generic'))}</div>
+        <div class="acc-sub">${escapeHtml(t('account.code'))} ${escapeHtml(maskKey(acc.key))}</div>
       </div>
-      ${isActive ? '<span class="acc-active-tag">actief</span>' : ''}
-      <button class="acc-forget" title="Van dit toestel vergeten">vergeten</button>
+      ${isActive ? `<span class="acc-active-tag">${escapeHtml(t('account.active'))}</span>` : ''}
+      <button class="acc-forget" title="${escapeAttr(t('account.forgetHint'))}">${escapeHtml(t('account.forget'))}</button>
     `;
     row.querySelector('.acc-forget').onclick = (e)=>{ e.stopPropagation(); forgetAccount(acc.key); };
     row.onclick = (e)=>{ if(e.target.closest('.acc-forget')) return; if(!isActive) switchAccount(acc.key, acc.label); };
@@ -2565,7 +3296,7 @@ async function switchAccount(key, label){
     renderAll();
   }catch(e){
     console.error(e);
-    const msg = String(e.message).includes('invalid key') ? 'Ongeldige toegangscode.' : 'Kon geen verbinding maken. Probeer opnieuw.';
+    const msg = t(String(e.message).includes('invalid key') ? 'err.invalidKey' : 'err.noConnection');
     errEl.textContent = msg;
     // Terug naar het vorige account.
     localStorage.removeItem(STORAGE_KEY);
@@ -2584,7 +3315,7 @@ async function switchAccount(key, label){
 async function addAccountFromModal(){
   const key = document.getElementById('accKeyInput').value.trim();
   const label = document.getElementById('accLabelInput').value.trim();
-  if(!key){ document.getElementById('accountError').textContent = 'Vul een toegangscode in.'; return; }
+  if(!key){ document.getElementById('accountError').textContent = t('err.enterKey'); return; }
   await switchAccount(key, label);
 }
 
@@ -2608,43 +3339,18 @@ function stripCodeFromUrl(){
 /* ---- uitleg: app op beginscherm zetten (per toestel/browser) ---- */
 const GUIDE_KEY = 'vakantie-planner-guide-seen';
 const SHARE = '<span class="share-ic">↑</span>';
-const INSTALL_VARIANTS = {
-  'ios-safari': { label:'iPhone / iPad · Safari', steps:[
-    `Tik onderaan op de <b>Deel</b>-knop ${SHARE} (vierkantje met pijltje omhoog).`,
-    `Scrol en tik op <b>“Zet op beginscherm”</b>.`,
-    `Tik rechtsboven op <b>“Voeg toe”</b>.`
-  ]},
-  'ios-other': { label:'iPhone / iPad · Chrome / Edge / Firefox', steps:[
-    `Tik op de <b>⋯</b> (drie puntjes) of de <b>Deel</b>-knop ${SHARE} — meestal rechtsboven of onderaan.`,
-    `Kies <b>“Delen”</b> als dat verschijnt, en dan <b>“Zet op beginscherm”</b>.`,
-    `Tik op <b>“Voeg toe”</b>.`
-  ], note:`Tip: in <b>Safari</b> gaat het het vlotst — daar staat de Deel-knop ${SHARE} meteen in de balk, zonder de ⋯.` },
-  'android-chrome': { label:'Android · Chrome', steps:[
-    `Tik rechtsboven op <b>⋮</b> (de drie puntjes).`,
-    `Tik op <b>“Toevoegen aan startscherm”</b> of <b>“App installeren”</b>.`,
-    `Tik op <b>“Toevoegen”</b> / <b>“Installeren”</b>.`
-  ]},
-  'android-samsung': { label:'Android · Samsung Internet', steps:[
-    `Tik onderaan op het <b>menu</b> (≡).`,
-    `Tik op <b>“Pagina toevoegen aan”</b> en kies <b>“Startscherm”</b>.`,
-    `Bevestig met <b>“Toevoegen”</b>.`
-  ]},
-  'android-firefox': { label:'Android · Firefox', steps:[
-    `Tik op <b>⋮</b> (de drie puntjes).`,
-    `Tik op <b>“Toevoegen aan startscherm”</b>.`,
-    `Bevestig met <b>“Toevoegen”</b>.`
-  ]},
-  'android-edge': { label:'Android · Edge', steps:[
-    `Tik onderaan op <b>≡</b> (menu).`,
-    `Tik op <b>“Toevoegen aan telefoon”</b> → <b>“Startscherm”</b>.`,
-    `Bevestig met <b>“Toevoegen”</b>.`
-  ]},
-  'desktop': { label:'Computer', steps:[
-    `Klik in de adresbalk op het <b>installeer-icoon</b> (een schermpje met ⊕), of open het browsermenu.`,
-    `Kies <b>“App installeren”</b> of <b>“Toevoegen aan …”</b>.`,
-    `Bevestig.`
-  ]}
-};
+// De labels, stappen en tips zelf staan in de vertalingen
+// (install.<variant>.label / .steps / .note).
+const INSTALL_KEYS = ['ios-safari','ios-other','android-chrome','android-samsung','android-firefox','android-edge','desktop'];
+function installVariant(key){
+  const note = I18N[lang] && I18N[lang]['install.'+key+'.note'] !== undefined
+    ? t('install.'+key+'.note') : I18N.nl['install.'+key+'.note'];
+  return {
+    label: t('install.'+key+'.label'),
+    steps: (t('install.'+key+'.steps') || []).map(s => s.split('{share}').join(SHARE)),
+    note: note ? note.split('{share}').join(SHARE) : null
+  };
+}
 function detectPlatform(){
   const ua = navigator.userAgent || '';
   const isIOS = /iPad|iPhone|iPod/.test(ua) ||
@@ -2669,7 +3375,7 @@ function detectPlatform(){
 function platformKey(){
   const {os, browser} = detectPlatform();
   if(os === 'ios') return browser === 'safari' ? 'ios-safari' : 'ios-other';
-  if(os === 'android') return INSTALL_VARIANTS['android-'+browser] ? 'android-'+browser : 'android-chrome';
+  if(os === 'android') return INSTALL_KEYS.includes('android-'+browser) ? 'android-'+browser : 'android-chrome';
   return 'desktop';
 }
 function variantHtml(v){
@@ -2678,13 +3384,16 @@ function variantHtml(v){
 }
 function renderInstallGuide(){
   const key = platformKey();
-  const cur = INSTALL_VARIANTS[key];
-  const others = Object.keys(INSTALL_VARIANTS).filter(k => k !== key);
+  const cur = installVariant(key);
+  const others = INSTALL_KEYS.filter(k => k !== key);
   document.getElementById('installContent').innerHTML =
-    `<div class="guide-detected">Gedetecteerd: <b>${cur.label}</b></div>` +
+    `<div class="guide-detected">${t('install.detected', {label: escapeHtml(cur.label)})}</div>` +
     variantHtml(cur) +
-    `<details class="guide-more"><summary>Ander toestel of klopt dit niet? Toon alle stappen</summary>` +
-    others.map(k=>`<div class="guide-other"><div class="guide-other-label">${INSTALL_VARIANTS[k].label}</div>${variantHtml(INSTALL_VARIANTS[k])}</div>`).join('') +
+    `<details class="guide-more"><summary>${escapeHtml(t('install.moreSummary'))}</summary>` +
+    others.map(k=>{
+      const v = installVariant(k);
+      return `<div class="guide-other"><div class="guide-other-label">${escapeHtml(v.label)}</div>${variantHtml(v)}</div>`;
+    }).join('') +
     `</details>`;
 }
 function isStandalone(){
@@ -2701,6 +3410,7 @@ function maybeShowInstallGuide(){
 }
 
 (async function init(){
+  applyStaticI18n();
   // Deelbare link: staat er een code in de URL, log daar dan meteen mee in.
   if(REMOTE_ENABLED){
     const urlCode = getCodeFromUrl();
@@ -2711,14 +3421,14 @@ function maybeShowInstallGuide(){
       localStorage.setItem(ACCESS_KEY_STORAGE, urlCode);
       try{
         await loadState();
-        rememberAccount(urlCode, 'Gedeelde planner');
+        rememberAccount(urlCode, t('account.sharedName'));
         renderAll();
         maybeShowInstallGuide();
         return;
       }catch(e){
         console.error(e);
         localStorage.removeItem(ACCESS_KEY_STORAGE);
-        openGate(String(e.message).includes('invalid key') ? 'De code in de link is ongeldig.' : 'Kon geen verbinding maken. Probeer opnieuw.');
+        openGate(t(String(e.message).includes('invalid key') ? 'err.invalidLinkKey' : 'err.noConnection'));
         return;
       }
     }
@@ -2732,7 +3442,7 @@ function maybeShowInstallGuide(){
     // Bestaand ingelogd account onthouden zodat het meteen in de switcher staat.
     if(REMOTE_ENABLED){
       const cur = localStorage.getItem(ACCESS_KEY_STORAGE);
-      if(cur && !getAccounts().some(x => x.key === cur)) rememberAccount(cur, 'Mijn account');
+      if(cur && !getAccounts().some(x => x.key === cur)) rememberAccount(cur, t('account.defaultName'));
     }
     renderAll();
     maybeShowInstallGuide();
@@ -2740,7 +3450,7 @@ function maybeShowInstallGuide(){
     console.error(e);
     if(REMOTE_ENABLED){
       localStorage.removeItem(ACCESS_KEY_STORAGE);
-      openGate(String(e.message).includes('invalid key') ? 'Ongeldige toegangscode.' : 'Kon geen verbinding maken. Probeer opnieuw.');
+      openGate(t(String(e.message).includes('invalid key') ? 'err.invalidKey' : 'err.noConnection'));
     }
   }
 })();
