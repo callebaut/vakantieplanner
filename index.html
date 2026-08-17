@@ -1568,7 +1568,17 @@ function catCollapsed(){
 let editingChecklist = null;   // {kind, id, general}
 let editingTemplateId = null;  // id in de algemene-lijst-modal
 
-function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
+// Id's worden op elk toestel apart gemaakt en zijn nu de sleutel van een rij in
+// de boodschappentabel; ze moeten dus ook tussen toestellen uniek zijn.
+function uid(){
+  try{
+    const b = new Uint8Array(9);
+    crypto.getRandomValues(b);
+    return 'id_' + Array.from(b, x => x.toString(36).padStart(2, '0')).join('');
+  }catch(e){
+    return 'id_' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+  }
+}
 
 function fmtISO(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -1790,7 +1800,9 @@ function migrateTemplate(s){
     trip.packing = Array.isArray(trip.packing) ? trip.packing : [];
     trip.prep = Array.isArray(trip.prep) ? trip.prep : [];
     trip.places = Array.isArray(trip.places) ? trip.places : [];
-    trip.shopping = Array.isArray(trip.shopping) ? trip.shopping : [];
+    // trip.shopping staat niet meer in de state-JSON: boodschappen hebben een
+    // eigen tabel (zie shopping_sync). Wat er nog in staat, wordt bij het laden
+    // verhuisd door migrateBlobShopping().
     trip.templateState = trip.templateState || emptyTemplateState();
     ['packing','prep'].forEach(k=>{
       trip.templateState[k] = trip.templateState[k] || {done:{}, skip:{}};
@@ -1890,7 +1902,13 @@ function writeLocalCache(){
   catch(e){ console.error('Lokaal opslaan mislukt', e); }
 }
 
+// Laadt de planner-state (de JSON-blob) én de boodschappen (eigen tabel).
 async function loadState(){
+  await loadStateBlob();
+  await loadShopping();
+}
+
+async function loadStateBlob(){
   if(!REMOTE_ENABLED){
     state = migrateState(readLocalCache()) || migrateTemplate(defaultState());
     ensureCurrentTrip();
@@ -2268,7 +2286,7 @@ function applyPanelCollapse(kind){
     const n = (trip.places||[]).length;
     cnt.textContent = n ? String(n) : '';
   } else if(kind==='shopping'){
-    const list = trip.shopping || [];
+    const list = shoppingItemsFor(trip.id);
     const done = list.filter(x=>x.done).length;
     cnt.textContent = list.length ? `${done}/${list.length}` : '';
   } else {
@@ -2581,11 +2599,216 @@ function setWhoName(name){
 let editingShoppingId = null;
 let editingWho = false;
 
+/* ---- synchronisatie: één rij per item, losse bewerkingen ----
+   De rest van de planner gaat als één JSON-blob heen en weer (last-write-wins).
+   Voor het boodschappenlijstje kan dat niet: als twee mensen tegelijk iets
+   toevoegen, overschrijft de laatste save de toevoeging van de ander.
+   Daarom staan boodschappen in een eigen tabel en sturen we losse bewerkingen
+   ("voeg dit item toe", "vink dit item af") i.p.v. de hele lijst. Twee mensen
+   raken zo nooit dezelfde rij, en er valt niets meer weg.
+
+   Wat er lokaal nog niet verstuurd is, staat in een outbox in localStorage.
+   Die overleeft offline zijn, herladen en de app afsluiten, en wordt bij de
+   eerstvolgende geslaagde sync alsnog doorgestuurd.
+
+   Cache en outbox staan per toegangscode apart. Wissel je van account terwijl
+   er nog iets klaarstaat (bv. zonder verbinding), dan blijft dat bij het juiste
+   account wachten in plaats van verloren te gaan of in het verkeerde lijstje
+   terecht te komen. */
+const SHOP_CACHE_KEY  = 'vakantie-planner-shopping';
+const SHOP_OUTBOX_KEY = 'vakantie-planner-shopping-outbox';
+const SHOP_POLL_MS    = 12000;
+
+let shopItems  = [];   // [{trip, id, text, done, who}] — alle vakanties samen
+let shopOutbox = [];   // nog niet doorgestuurde bewerkingen, op volgorde
+
+function shopStoreKey(base){
+  const k = REMOTE_ENABLED ? (localStorage.getItem(ACCESS_KEY_STORAGE) || '') : 'lokaal';
+  return k ? base + ':' + k : base;
+}
+function readShopJson(base){
+  try{ const a = JSON.parse(localStorage.getItem(shopStoreKey(base))); return Array.isArray(a) ? a : []; }
+  catch(e){ return []; }
+}
+function writeShopJson(base, val){
+  try{ localStorage.setItem(shopStoreKey(base), JSON.stringify(val)); }catch(e){}
+}
+function readShopCache(){ return readShopJson(SHOP_CACHE_KEY); }
+function writeShopCache(){ writeShopJson(SHOP_CACHE_KEY, shopItems); }
+function readShopOutbox(){ return readShopJson(SHOP_OUTBOX_KEY); }
+function writeShopOutbox(){ writeShopJson(SHOP_OUTBOX_KEY, shopOutbox); }
+
+function shoppingItemsFor(tripId){
+  return tripId ? shopItems.filter(x => x.trip === tripId) : [];
+}
 function shoppingList(){
-  const trip = getTrip();
-  if(!trip) return [];
-  if(!Array.isArray(trip.shopping)) trip.shopping = [];
-  return trip.shopping;
+  return shoppingItemsFor(currentTripId);
+}
+
+// Een bewerking meteen lokaal toepassen, zodat de lijst direct klopt zonder op
+// de server te wachten. Dezelfde functie zet ook nog-niet-verstuurde
+// bewerkingen terug bovenop wat de server teruggeeft.
+function applyShopOp(op){
+  if(op.op === 'add'){
+    if(shopItems.some(x => x.trip === op.trip && x.id === op.id)) return;
+    shopItems.push({trip:op.trip, id:op.id, text:op.text, done:!!op.done, who:op.who || ''});
+  } else if(op.op === 'done'){
+    const it = shopItems.find(x => x.trip === op.trip && x.id === op.id);
+    if(it) it.done = !!op.done;
+  } else if(op.op === 'text'){
+    const it = shopItems.find(x => x.trip === op.trip && x.id === op.id);
+    if(it) it.text = op.text;
+  } else if(op.op === 'del'){
+    shopItems = shopItems.filter(x => !(x.trip === op.trip && x.id === op.id));
+  } else if(op.op === 'delTrip'){
+    shopItems = shopItems.filter(x => x.trip !== op.trip);
+  }
+}
+
+function queueShopOp(op){
+  applyShopOp(op);
+  shopOutbox.push(op);
+  writeShopOutbox();
+  writeShopCache();
+  scheduleShopSync();
+}
+
+let shopSyncTimer = null;
+let shopSyncing = null;      // de lopende sync (promise), of null
+let shopSyncAgain = false;
+function scheduleShopSync(){
+  if(!REMOTE_ENABLED) return;
+  clearTimeout(shopSyncTimer);
+  shopSyncTimer = setTimeout(()=>{ shopSyncTimer = null; syncShopping(); }, 400);
+}
+
+// Handtekening van de lijst, om te zien of een sync echt iets veranderd heeft.
+// Zonder die controle zou elke poll de lijst hertekenen en de cursor uit een
+// item springen dat iemand net aan het hernoemen is.
+function shopSignature(){
+  return shopItems.map(x => `${x.trip}|${x.id}|${x.text}|${x.done?1:0}|${x.who||''}`).join('\n');
+}
+
+/* Stuurt de outbox door en haalt de actuele lijst op — in één call, zodat de
+   server de bewerkingen toepast vóór hij de lijst teruggeeft.
+   opts.strict: fout bij een ongeldige code doorgooien i.p.v. het toegangsscherm
+   te openen (gebruikt tijdens het laden en bij het wisselen van account). */
+async function syncShopping(opts){
+  if(!REMOTE_ENABLED) return false;
+  const key = localStorage.getItem(ACCESS_KEY_STORAGE);
+  if(!key) return false;
+  // Loopt er al een sync? Dan niet overslaan maar meteen erna nog eens gaan,
+  // anders zou wat je net intikte tot de volgende poll blijven liggen.
+  if(shopSyncing){ shopSyncAgain = true; return false; }
+  const run = runShopSync(key, opts);
+  shopSyncing = run;
+  try{ return await run; }
+  finally{
+    shopSyncing = null;
+    if(shopSyncAgain){ shopSyncAgain = false; scheduleShopSync(); }
+  }
+}
+
+async function runShopSync(key, opts){
+  // Vastleggen wat we nu versturen; wat er tijdens de call bijkomt, blijft
+  // gewoon achteraan in de outbox staan en gaat mee met de volgende ronde.
+  const batch = shopOutbox.slice();
+  const before = shopSignature();
+  try{
+    const rows = await rpc('shopping_sync', {access_key:key, ops:batch});
+    shopOutbox = shopOutbox.slice(batch.length);
+    writeShopOutbox();
+    shopItems = (Array.isArray(rows) ? rows : []).map(r => ({
+      trip:r.trip_id, id:r.id, text:r.text, done:!!r.done, who:r.who || ''
+    }));
+    shopOutbox.forEach(applyShopOp);
+    writeShopCache();
+    setOffline(false);
+    if(batch.length) flashSaved();
+    // Tijdens het hernoemen niet hertekenen; die wijziging komt mee met de
+    // render die na het bevestigen volgt.
+    if(shopSignature() !== before && !editingShoppingId) renderShopping();
+    refreshNav();
+    return true;
+  }catch(e){
+    if(String(e.message).includes('invalid key')){
+      if(opts && opts.strict) throw e;
+      localStorage.removeItem(ACCESS_KEY_STORAGE);
+      openGate(t('err.keyExpired'));
+      return false;
+    }
+    // Geen verbinding: alles staat lokaal en blijft in de outbox wachten.
+    console.error('Boodschappen synchroniseren mislukt', e);
+    setOffline(true);
+    return false;
+  }
+}
+
+/* Boodschappen stonden vroeger in de state-JSON. Alles wat daar nog in staat
+   verhuist naar de boodschappentabel vóór het uit de JSON verdwijnt. Dit vangt
+   ook items op die een oude, nog niet ververste app-versie er later inzet, en
+   items die enkel in de lokale cache van dit toestel stonden.
+   Geeft terug of de state-JSON aangepast is (en dus bewaard moet worden). */
+function migrateBlobShopping(){
+  if(!state || !Array.isArray(state.trips)) return false;
+  let changed = false, moved = 0;
+  state.trips.forEach(trip=>{
+    if(!('shopping' in trip)) return;
+    const old = trip.shopping;
+    if(Array.isArray(old)){
+      old.forEach(it=>{
+        const text = ((it && it.text) || '').trim();
+        if(!text) return;
+        const id = (it && it.id) || uid();
+        if(shopItems.some(x => x.trip === trip.id && x.id === id)) return;
+        const op = {op:'add', trip:trip.id, id, text, done:!!it.done, who:(it.who || '')};
+        applyShopOp(op);
+        shopOutbox.push(op);
+        moved++;
+      });
+    }
+    delete trip.shopping;
+    changed = true;
+  });
+  if(moved){ writeShopOutbox(); }
+  if(changed) writeShopCache();
+  return changed;
+}
+
+// Wordt aangeroepen na het laden van de state-JSON, in élk pad (ook offline).
+async function loadShopping(){
+  shopItems  = readShopCache();
+  shopOutbox = readShopOutbox();
+  if(REMOTE_ENABLED) await syncShopping({strict:true});
+  if(migrateBlobShopping()){
+    // De verhuisde items eerst veilig op de server zetten, pas daarna de
+    // state-JSON zonder 'shopping' bewaren.
+    if(REMOTE_ENABLED) await syncShopping({strict:true});
+    persist();
+  }
+  writeShopCache();
+  startShopPoll();
+}
+
+// Bij het wisselen van account: enkel het werkgeheugen leegmaken, zodat het ene
+// lijstje niet in het andere account terechtkomt. Wat in localStorage staat,
+// blijft onder de toegangscode van dát account bewaard — een bewerking die nog
+// niet verstuurd raakte (bv. zonder verbinding) gaat zo nooit verloren en volgt
+// alsnog wanneer je naar dat account terugkeert.
+function clearShoppingLocal(){
+  shopItems = [];
+  shopOutbox = [];
+}
+
+// Meelezen met wat anderen toevoegen: de server pollen zolang de app zichtbaar
+// is. Realtime van Supabase kan hier niet: dat vereist leesrechten voor de
+// publieke anon key, en dan zou iedereen met die key elk lijstje kunnen lezen.
+let shopPollTimer = null;
+function startShopPoll(){
+  if(!REMOTE_ENABLED || shopPollTimer) return;
+  shopPollTimer = setInterval(()=>{
+    if(document.visibilityState === 'visible' && state) syncShopping();
+  }, SHOP_POLL_MS);
 }
 
 function shoppingItemHtml(it){
@@ -2666,41 +2889,39 @@ function addShoppingItem(){
   const inp = document.getElementById('shoppingInput');
   const text = inp.value.trim();
   if(!text) return;
-  const item = {id:uid(), text, done:false};
   const who = getWhoName();
-  if(who) item.who = who;
-  shoppingList().push(item);
+  queueShopOp({op:'add', trip:trip.id, id:uid(), text, done:false, who});
   inp.value = '';
-  persist();
   renderShopping();
   refreshNav();
 }
 function toggleShopping(id){
   const it = shoppingList().find(x=>x.id===id);
   if(!it) return;
-  it.done = !it.done;
-  persist();
+  // De nieuwe waarde meesturen, niet "omdraaien": zo levert opnieuw versturen
+  // na een mislukte verbinding hetzelfde resultaat op.
+  queueShopOp({op:'done', trip:it.trip, id, done:!it.done});
   renderShopping();
   refreshNav();
 }
 function removeShopping(id){
   if(!armDelete(id, renderShopping)) return;
-  const trip = getTrip();
-  trip.shopping = shoppingList().filter(x=>x.id!==id);
-  persist();
+  const it = shoppingList().find(x=>x.id===id);
+  if(!it) return;
+  queueShopOp({op:'del', trip:it.trip, id});
   renderShopping();
   refreshNav();
 }
 function clearDoneShopping(){
-  const trip = getTrip();
-  const before = shoppingList().length;
-  trip.shopping = shoppingList().filter(x=>!x.done);
-  const removed = before - trip.shopping.length;
-  if(!removed) return;
-  persist();
+  // Per item wissen (niet "alles wat afgevinkt is" in één keer): anders zou een
+  // offline gemaakte opkuis ook items wissen die iemand anders intussen
+  // toevoegde en afvinkte.
+  const done = shoppingList().filter(x=>x.done);
+  if(!done.length) return;
+  done.forEach(it => queueShopOp({op:'del', trip:it.trip, id:it.id}));
   renderShopping();
   refreshNav();
-  flashSaved(t('flash.shoppingCleared', {n: removed}));
+  flashSaved(t('flash.shoppingCleared', {n: done.length}));
 }
 function startShoppingRename(id){ editingShoppingId = id; renderShopping(); }
 function onShoppingRenameKey(e, id){
@@ -2712,7 +2933,7 @@ function commitShoppingRename(id, value){
   editingShoppingId = null;
   const text = (value || '').trim();
   const it = shoppingList().find(x=>x.id===id);
-  if(it && text && it.text !== text){ it.text = text; persist(); }
+  if(it && text && it.text !== text) queueShopOp({op:'text', trip:it.trip, id, text});
   renderShopping();
 }
 
@@ -2773,7 +2994,7 @@ function refreshNav(){
   const pr = effectiveList(trip, 'prep');
   setBadge('navPackingBadge', pk.general.concat(pk.extras).filter(x=>!x.done).length);
   setBadge('navPrepBadge', pr.general.concat(pr.extras).filter(x=>!x.done).length);
-  setBadge('navShoppingBadge', (trip.shopping||[]).filter(x=>!x.done).length);
+  setBadge('navShoppingBadge', shoppingItemsFor(trip.id).filter(x=>!x.done).length);
 }
 
 function fmtDate(startDate, dayOffset){
@@ -3071,7 +3292,7 @@ function saveTrip(){
   } else {
     // Nieuwe vakantie erft automatisch de algemene lijst; enkel eigen extra's.
     trip = {id:uid(), name, emoji, transport, startDate, endDate, notes, sections,
-            packing:[], prep:[], places:[], shopping:[], items:[], templateState:emptyTemplateState()};
+            packing:[], prep:[], places:[], items:[], templateState:emptyTemplateState()};
     state.trips.push(trip);
     currentTripId = trip.id;
   }
@@ -3091,6 +3312,7 @@ function deleteTrip(){
     btn.textContent = t('btn.confirmDelete');
     return;
   }
+  queueShopOp({op:'delTrip', trip:editingTripId});
   state.trips = state.trips.filter(x=>x.id!==editingTripId);
   if(currentTripId===editingTripId) currentTripId = state.trips[0] ? state.trips[0].id : null;
   persist();
@@ -3268,15 +3490,12 @@ function confirmImport(){
     return it;
   };
   if(importKind === 'shopping'){
-    const list = shoppingList();
-    const existing = new Set(list.map(x=>(x.text||'').trim().toLowerCase()));
+    const existing = new Set(shoppingList().map(x=>(x.text||'').trim().toLowerCase()));
     const who = getWhoName();
     items.forEach(text=>{
       if(existing.has(text.toLowerCase())) return;
       existing.add(text.toLowerCase());
-      const it = {id:uid(), text, done:false};
-      if(who) it.who = who;
-      list.push(it);
+      queueShopOp({op:'add', trip:trip.id, id:uid(), text, done:false, who});
       added++;
     });
   } else if(scope === 'general'){
@@ -3449,7 +3668,7 @@ function shareStatus(){
 
   // Enkel de secties die op deze vakantie aanstaan, komen in de status.
   if(sectionVisible(trip, 'shopping')){
-    const shop = trip.shopping || [];
+    const shop = shoppingItemsFor(trip.id);
     const shopLeft = shop.filter(s=>!s.done);
     if(shop.length){
       lines.push(t('status.shopping', {n: shopLeft.length}));
@@ -3520,6 +3739,7 @@ async function submitGate(){
   // zodat we nooit data van account A naar account B pushen.
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(DIRTY_KEY);
+  clearShoppingLocal();
   localStorage.setItem(ACCESS_KEY_STORAGE, key);
   document.getElementById('gateError').textContent = '';
   try{
@@ -3563,9 +3783,15 @@ function maskKey(key){
 async function flushPending(){
   if(!REMOTE_ENABLED) return;
   if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; }
+  if(shopSyncTimer){ clearTimeout(shopSyncTimer); shopSyncTimer = null; }
   if(localStorage.getItem(DIRTY_KEY)){
     try{ await pushLocal(localStorage.getItem(ACCESS_KEY_STORAGE)); }catch(e){ /* blijft dirty */ }
   }
+  // Nog niet verstuurde boodschappen horen bij het account dat we verlaten.
+  // Eerst een eventueel lopende sync uitzitten, anders zou onze eigen call
+  // afketsen op de "er loopt er al een"-controle.
+  if(shopSyncing){ try{ await shopSyncing; }catch(e){} }
+  if(shopOutbox.length){ try{ await syncShopping({strict:true}); }catch(e){ /* blijft in de outbox */ } }
 }
 
 function openAccountModal(){
@@ -3618,6 +3844,7 @@ async function switchAccount(key, label){
   await flushPending();
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(DIRTY_KEY);
+  clearShoppingLocal();
   localStorage.setItem(ACCESS_KEY_STORAGE, key);
   try{
     await loadState();
@@ -3631,6 +3858,7 @@ async function switchAccount(key, label){
     // Terug naar het vorige account.
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(DIRTY_KEY);
+    clearShoppingLocal();
     if(prevKey){
       localStorage.setItem(ACCESS_KEY_STORAGE, prevKey);
       try{ await loadState(); renderAll(); }catch(_){ }
@@ -3748,6 +3976,7 @@ function maybeShowInstallGuide(){
       stripCodeFromUrl();
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(DIRTY_KEY);
+      clearShoppingLocal();
       localStorage.setItem(ACCESS_KEY_STORAGE, urlCode);
       try{
         await loadState();
